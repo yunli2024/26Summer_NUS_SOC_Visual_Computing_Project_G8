@@ -1,0 +1,88 @@
+{
+  "classes": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "neutral",
+    "sad",
+    "surprise"
+  ],
+  "train_records_selected": 28709,
+  "test_records_selected": 7178,
+  "train_feature_stats": {
+    "total": 28709,
+    "ok": 28709,
+    "failed": 0,
+    "center_fallback": 14653,
+    "haar": 14056
+  },
+  "test_feature_stats": {
+    "total": 7178,
+    "ok": 7178,
+    "failed": 0,
+    "center_fallback": 3656,
+    "haar": 3522
+  },
+  "accuracy": 0.4536082474226804,
+  "macro_f1": 0.419780076293826,
+  "avg_prediction_ms": 3.2867470743976934,
+  "classification_report": {
+    "angry": {
+      "precision": 0.3465020576131687,
+      "recall": 0.4394572025052192,
+      "f1-score": 0.3874827427519558,
+      "support": 958.0
+    },
+    "disgust": {
+      "precision": 0.23076923076923078,
+      "recall": 0.43243243243243246,
+      "f1-score": 0.30094043887147337,
+      "support": 111.0
+    },
+    "fear": {
+      "precision": 0.2860824742268041,
+      "recall": 0.216796875,
+      "f1-score": 0.24666666666666667,
+      "support": 1024.0
+    },
+    "happy": {
+      "precision": 0.6794081381011098,
+      "recall": 0.62119503945885,
+      "f1-score": 0.6489988221436984,
+      "support": 1774.0
+    },
+    "neutral": {
+      "precision": 0.40611353711790393,
+      "recall": 0.45255474452554745,
+      "f1-score": 0.428078250863061,
+      "support": 1233.0
+    },
+    "sad": {
+      "precision": 0.3678804855275444,
+      "recall": 0.31595829991980756,
+      "f1-score": 0.3399482312338223,
+      "support": 1247.0
+    },
+    "surprise": {
+      "precision": 0.5603070175438597,
+      "recall": 0.614921780986763,
+      "f1-score": 0.5863453815261044,
+      "support": 831.0
+    },
+    "accuracy": 0.4536082474226804,
+    "macro avg": {
+      "precision": 0.41100899155708875,
+      "recall": 0.4419023392612314,
+      "f1-score": 0.419780076293826,
+      "support": 7178.0
+    },
+    "weighted avg": {
+      "precision": 0.4570748028290035,
+      "recall": 0.4536082474226804,
+      "f1-score": 0.45242579731563365,
+      "support": 7178.0
+    }
+  },
+  "model_path": "D:\\26spring_NUS_SOC_SWS\\project\\demo_0710\\models\\expression_classifier.joblib"
+}

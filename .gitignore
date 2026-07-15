@@ -1,0 +1,29 @@
+# Python/runtime noise
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+
+# OS metadata
+.DS_Store
+**/.DS_Store
+**/._*
+
+# Local generated outputs
+demo_0710/features/
+demo_0710/snapshots/
+demo_0710/reports/cache_check/
+demo_0710/reports/parallel_smoke/
+demo_0710/models/cache_check.joblib
+demo_0710/models/parallel_smoke.joblib
+
+# Extracted/incomplete dataset copy; use the zip in expert/ instead.
+expert/facial_expression_dataset/
+
+# Large optional TikTok raw dataset videos exceed normal GitHub limits.
+# Keep these locally and document how to obtain/use them instead.
+TikTokDataset/
