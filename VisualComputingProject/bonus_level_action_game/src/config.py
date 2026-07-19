@@ -1,0 +1,183 @@
+"""Configuration for the Bonus Level pose scoring demo."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+BONUS_DIR = Path(__file__).resolve().parents[1]
+PROJECT_DIR = BONUS_DIR.parent
+
+MODEL_PATH = PROJECT_DIR / "resources" / "pose_models" / "yolov8n-pose.pt"
+DEFAULT_VIDEO_PATH = PROJECT_DIR / "resources" / "videos" / "dance_example_1.mp4"
+TIKTOK_DATASET_DIR = BONUS_DIR / "data" / "input" / "reference_videos" / "tiktok"
+RUNTIME_OUTPUT_DIR = BONUS_DIR / "outputs" / "runtime"
+
+DISPLAY_SIZE = (640, 384)
+YOLO_CONF_THRESHOLD = 0.25
+KEYPOINT_CONF_THRESHOLD = 0.12
+MIN_VALID_KEYPOINTS = 6
+POSE_DEVICE_OVERRIDE = "cpu"
+
+# Runner prototype input source. Leave RUNNER_VIDEO_PATH empty to use webcam.
+RUNNER_CAMERA_INDEX = 0
+RUNNER_VIDEO_PATH = ""
+RUNNER_CAMERA_WIDTH = 960
+RUNNER_CAMERA_HEIGHT = 540
+RUNNER_INFER_WIDTH = 640
+RUNNER_SHOW_CV_PREVIEW = False
+
+# Upper-body runner gesture thresholds.
+POSE_CONFIDENCE_THRESHOLD = 0.18
+BODY_MOVE_TRIGGER_THRESHOLD = 0.10
+BODY_MOVE_RETURN_THRESHOLD = 0.045
+BODY_MOVE_CONFIRM_FRAMES = 3
+BODY_RELATIVE_MOVE_TRIGGER_THRESHOLD = 0.095
+BODY_RELATIVE_MOVE_RETURN_THRESHOLD = 0.030
+BODY_RELATIVE_MOVE_HISTORY_FRAMES = 5
+LEAN_TRIGGER_THRESHOLD = BODY_MOVE_TRIGGER_THRESHOLD
+LEAN_RETURN_THRESHOLD = BODY_MOVE_RETURN_THRESHOLD
+LEAN_CONFIRM_FRAMES = BODY_MOVE_CONFIRM_FRAMES
+LANE_ACTION_COOLDOWN = 0.28
+JUMP_CONFIRM_FRAMES = 2
+JUMP_ACTION_COOLDOWN = 0.70
+SLIDE_CONFIRM_FRAMES = 3
+SLIDE_ACTION_COOLDOWN = 0.70
+SMOOTHING_ALPHA = 0.30
+CALIBRATION_VALID_FRAMES = 30
+BODY_VERTICAL_MOVE_HISTORY_FRAMES = 5
+JUMP_BODY_UP_TRIGGER_THRESHOLD = 0.10
+JUMP_BODY_ABOVE_NEUTRAL_THRESHOLD = -0.045
+JUMP_BODY_RETURN_THRESHOLD = 0.035
+SLIDE_BODY_DOWN_TRIGGER_THRESHOLD = 0.14
+SLIDE_BODY_RETURN_THRESHOLD = 0.055
+POSE_LOST_GRACE_SECONDS = 0.40
+
+# Runner game display and mechanics.
+RUNNER_WINDOW_SIZE = (1180, 720)
+RUNNER_GAME_FPS = 60
+RUNNER_LANES = (0, 1, 2)
+RUNNER_START_LANE = 1
+RUNNER_PLAYER_Y = 590
+RUNNER_LANE_X = (390, 590, 790)
+RUNNER_PREVIEW_SIZE = (280, 158)
+RUNNER_OBSTACLE_SPAWN_SECONDS = 1.05
+RUNNER_OBSTACLE_SPEED_START = 330.0
+RUNNER_OBSTACLE_SPEED_GAIN = 8.0
+RUNNER_JUMP_DURATION = 0.62
+RUNNER_JUMP_HEIGHT = 130
+RUNNER_SLIDE_DURATION = 0.58
+RUNNER_LANE_MOVE_SPEED = 920.0
+RUNNER_PLAYER_COLLISION_HALF_WIDTH = 25
+RUNNER_COLLISION_Y_WINDOW = 30
+RUNNER_LOW_CLEAR_HEIGHT = 46
+
+# Ursina 3D runner settings.
+RUNNER_3D_WINDOW_TITLE = "Pose Runner 3D"
+RUNNER_3D_LANE_X = (-3.2, 0.0, 3.2)
+RUNNER_3D_PLAYER_Z = 0.0
+RUNNER_3D_OBSTACLE_START_Z = 58.0
+RUNNER_3D_DESPAWN_Z = -14.0
+RUNNER_3D_ROAD_SEGMENT_LENGTH = 18.0
+RUNNER_3D_ROAD_SEGMENTS = 7
+RUNNER_3D_OBSTACLE_SPAWN_SECONDS = 1.15
+RUNNER_3D_COIN_SPAWN_SECONDS = 0.70
+RUNNER_3D_WORLD_SPEED_START = 13.0
+RUNNER_3D_WORLD_SPEED_GAIN = 0.10
+RUNNER_3D_LANE_LERP_SPEED = 9.0
+RUNNER_3D_JUMP_DURATION = 0.66
+RUNNER_3D_JUMP_HEIGHT = 2.7
+RUNNER_3D_SLIDE_DURATION = 0.58
+RUNNER_3D_PLAYER_COLLISION_HALF_WIDTH = 0.58
+RUNNER_3D_COLLISION_Z_WINDOW = 1.05
+RUNNER_3D_LOW_CLEAR_HEIGHT = 1.25
+
+TRACK_WEIGHTS = {
+    "area": 0.40,
+    "center": 0.25,
+    "continuity": 0.25,
+    "confidence": 0.10,
+}
+
+EMA_ALPHA = 0.55
+MAX_MISSING_FRAMES = 3
+
+ALIGNMENT_WINDOW_SECONDS = 0.80
+REFERENCE_BUFFER_SECONDS = 12.0
+SCORE_EMA_ALPHA = 0.35
+OFFICIAL_SCORE_INTERVAL = 1.00
+
+SCORE_WEIGHTS = {
+    "coarse": 0.30,
+    "position": 0.30,
+    "angle": 0.20,
+    "vector": 0.20,
+}
+
+FEEDBACK_THRESHOLDS = {
+    "perfect": 85.0,
+    "super": 70.0,
+    "good": 50.0,
+}
+
+MIRROR_WEBCAM = True
+SWAP_LEFT_RIGHT = True
+
+COCO_KEYPOINT_NAMES = [
+    "nose",
+    "left_eye",
+    "right_eye",
+    "left_ear",
+    "right_ear",
+    "left_shoulder",
+    "right_shoulder",
+    "left_elbow",
+    "right_elbow",
+    "left_wrist",
+    "right_wrist",
+    "left_hip",
+    "right_hip",
+    "left_knee",
+    "right_knee",
+    "left_ankle",
+    "right_ankle",
+]
+
+SKELETON = [
+    (0, 5),
+    (0, 6),
+    (5, 6),
+    (5, 7),
+    (7, 9),
+    (6, 8),
+    (8, 10),
+    (5, 11),
+    (6, 12),
+    (11, 12),
+    (11, 13),
+    (13, 15),
+    (12, 14),
+    (14, 16),
+]
+
+LEFT_RIGHT_PAIRS = [
+    (1, 2),
+    (3, 4),
+    (5, 6),
+    (7, 8),
+    (9, 10),
+    (11, 12),
+    (13, 14),
+    (15, 16),
+]
+
+ANGLE_TRIPLES = {
+    "left_elbow": (5, 7, 9),
+    "right_elbow": (6, 8, 10),
+    "left_shoulder": (7, 5, 11),
+    "right_shoulder": (8, 6, 12),
+    "left_hip": (5, 11, 13),
+    "right_hip": (6, 12, 14),
+    "left_knee": (11, 13, 15),
+    "right_knee": (12, 14, 16),
+}
