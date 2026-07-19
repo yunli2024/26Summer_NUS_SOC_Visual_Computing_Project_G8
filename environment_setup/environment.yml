@@ -1,0 +1,8 @@
+﻿name: vc_sws3026
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - tk
+  - pip
+prefix: D:\miniconda3\envs\vc_sws3026

@@ -1,0 +1,56 @@
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+~$*
+
+# Model weights and large binary artifacts
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.h5
+*.yaml
+
+# Large datasets, videos, archives, and generated experiment outputs
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
+*.rar
+*.7z
+runs/
+wandb/
+mlruns/
+outputs/
+checkpoints/
+VisualComputingProject/**/data/
+VisualComputingProject/**/models/
+VisualComputingProject/resources/
+VisualComputingProject/project_materials/original_resources/
+
+# Local environment files
+.env
+.env.*
