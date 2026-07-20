@@ -19,7 +19,7 @@ try:
     from .landmark_extractor import LandmarkExtractor
     from .roi_inference import clamp_box, inference_device, roi_boxes_from_landmarks, roi_eval_transform
     from .roi_cnn_model import build_roi_cnn_model
-    from .video_effects import TRACK_COLORS, draw_debug_hud, draw_effect, draw_face_label, draw_landmarks
+    from .video_effects import TRACK_COLORS, draw_debug_hud, draw_face_label, draw_landmarks
 except ImportError:
     import config
     from face_geometry import face_area, face_center, face_inside, face_iou
@@ -28,7 +28,7 @@ except ImportError:
     from landmark_extractor import LandmarkExtractor
     from roi_inference import clamp_box, inference_device, roi_boxes_from_landmarks, roi_eval_transform
     from roi_cnn_model import build_roi_cnn_model
-    from video_effects import TRACK_COLORS, draw_debug_hud, draw_effect, draw_face_label, draw_landmarks
+    from video_effects import TRACK_COLORS, draw_debug_hud, draw_face_label, draw_landmarks
 
 
 def majority_vote(history: deque[str]) -> str:
@@ -570,7 +570,6 @@ def run_demo(
                 f"roi search: {len(search_faces)} full={force_full_frame}",
                 f"preprocess: {preprocess_mode} mean={brightness_mean:.1f} std={contrast_std:.1f}",
             ]
-            effect_expression = config.UNCERTAIN_LABEL
             for index, (track, detection) in enumerate(assignments):
                 face = detection["face"]
                 display_face = detection.get("display_face", face)
@@ -616,7 +615,6 @@ def run_demo(
                     track.stable_expression = track.prediction_smoother.stable_label
                     track.status = f"feature skipped: {exc}"
                 draw_landmarks(frame, display_landmarks, color)
-                effect_expression = track.stable_expression
                 debug_lines.append(
                     f"id {track.track_id}: raw={track.raw_expression} vote={track.voted_expression} "
                     f"stable={track.stable_expression} conf={track.confidence} margin={track.margin} "
@@ -627,7 +625,6 @@ def run_demo(
             fps = 1.0 / max(now - last_time, 1e-6)
             last_time = now
 
-            draw_effect(frame, effect_expression)
             for index, track in enumerate(visible_tracks):
                 color = TRACK_COLORS[index % len(TRACK_COLORS)]
                 display_face = track.display_face if track.display_face is not None else track.face
