@@ -24,6 +24,9 @@ class ScoreManager:
         self.position_score = 0.0
         self.angle_score = 0.0
         self.vector_score = 0.0
+        self.error_summary = ""
+        self.user_buffer_size = 0
+        self.matched_user_frame = 0
         self.has_score = False
 
     def reset(self):
@@ -44,6 +47,9 @@ class ScoreManager:
             self.position_score = float(details.get("position", self.position_score))
             self.angle_score = float(details.get("angle", self.angle_score))
             self.vector_score = float(details.get("vector", self.vector_score))
+            self.error_summary = str(details.get("error_summary", self.error_summary))
+            self.user_buffer_size = int(details.get("user_buffer_size", self.user_buffer_size))
+            self.matched_user_frame = int(details.get("matched_user_frame", self.matched_user_frame))
         if timestamp - self.last_official_time >= config.OFFICIAL_SCORE_INTERVAL:
             self.last_official_time = timestamp
             self.official_samples += 1
@@ -77,6 +83,9 @@ class ScoreManager:
             "position": self.position_score,
             "angle": self.angle_score,
             "vector": self.vector_score,
+            "error_summary": self.error_summary,
+            "user_buffer_size": self.user_buffer_size,
+            "matched_user_frame": self.matched_user_frame,
         }
 
     def summary_text(self):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 import cv2
 import numpy as np
@@ -75,8 +75,21 @@ class PoseDetector:
         return (float(x1), float(y1), float(x2), float(y2))
 
 
-def draw_pose(frame: np.ndarray, pose: PersonPose | None, people_count: int, infer_ms: float, score_text: str = ""):
+def draw_pose(
+    frame: np.ndarray,
+    pose: PersonPose | None,
+    people_count: int,
+    infer_ms: float,
+    score_text: str = "",
+    highlight_keypoints: Iterable[int] | None = None,
+    highlight_joints: Iterable[str] | None = None,
+    error_text: str = "",
+):
     overlay = frame.copy()
+    highlighted = set(highlight_keypoints or [])
+    for joint in highlight_joints or []:
+        for idx in config.ANGLE_TRIPLES.get(joint, ()):
+            highlighted.add(idx)
     if pose is not None:
         x1, y1, x2, y2 = [int(v) for v in pose.bbox]
         cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 180, 0), 2)
@@ -84,15 +97,31 @@ def draw_pose(frame: np.ndarray, pose: PersonPose | None, people_count: int, inf
             if pose.valid_mask[a] and pose.valid_mask[b]:
                 p1 = tuple(pose.keypoints[a].astype(int))
                 p2 = tuple(pose.keypoints[b].astype(int))
-                cv2.line(overlay, p1, p2, (0, 210, 70), 2)
+                color = (0, 120, 255) if a in highlighted or b in highlighted else (0, 210, 70)
+                thickness = 4 if a in highlighted or b in highlighted else 2
+                cv2.line(overlay, p1, p2, color, thickness)
         for idx, point in enumerate(pose.keypoints):
             if not pose.valid_mask[idx]:
                 continue
             x, y = point.astype(int)
-            cv2.circle(overlay, (x, y), 5, (30, 30, 255), -1)
-            cv2.putText(overlay, f"{pose.confidences[idx]:.2f}", (x + 4, y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (20, 20, 180), 1)
+            if idx in highlighted:
+                cv2.circle(overlay, (x, y), 9, (0, 0, 255), -1)
+                cv2.circle(overlay, (x, y), 12, (255, 255, 255), 2)
+            else:
+                cv2.circle(overlay, (x, y), 5, (30, 30, 255), -1)
+            cv2.putText(
+                overlay,
+                f"{pose.confidences[idx]:.2f}",
+                (x + 4, y - 4),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.35,
+                (20, 20, 180),
+                1,
+            )
 
     cv2.putText(overlay, f"People {people_count} | Infer {infer_ms:.1f} ms", (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 180, 255), 2)
     if score_text:
         cv2.putText(overlay, score_text, (10, 54), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 40), 2)
+    if error_text:
+        cv2.putText(overlay, f"Fix: {error_text}", (10, 84), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 80, 255), 2)
     return overlay

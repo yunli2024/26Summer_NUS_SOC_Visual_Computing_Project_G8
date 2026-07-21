@@ -38,7 +38,13 @@ folder retains its video plus the available dance-name and source-link metadata.
 ## Run
 
 ```powershell
-D:\miniconda3\envs\vc_sws3026\python.exe VisualComputingProject\bonus_level\main.py
+.\run_bonus_level.ps1
+```
+
+If PowerShell blocks scripts on your machine, run this once in the project root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run_bonus_level.ps1
 ```
 
 Use the left panel to play a reference video and the right panel to start the

@@ -21,6 +21,7 @@ from .pose_filter import PoseFilter
 from .pose_normalizer import normalize_pose, swap_left_right_keypoints
 from .pose_types import PoseFrame
 from .score_manager import ScoreManager
+from .sound_feedback import SoundFeedback
 from .temporal_alignment import TemporalAligner
 
 
@@ -48,6 +49,7 @@ class BonusPoseApp:
         self.user_filter = PoseFilter()
         self.aligner = TemporalAligner()
         self.score_manager = ScoreManager()
+        self.sound_feedback = SoundFeedback()
 
         self.reference_start_time = 0.0
         self.webcam_start_time = 0.0
@@ -58,6 +60,11 @@ class BonusPoseApp:
         self.reference_duration = 0.0
         self.latest_score_text = "Score 0 | Ready"
         self.placeholder_images = {}
+        self.default_score_bg = None
+        self.feedback_flash_job = None
+        self.last_visual_feedback = ""
+        self.settlement_window = None
+        self.game_over = False
 
         self._build_ui()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -109,6 +116,7 @@ class BonusPoseApp:
         score_panel.pack(fill=tk.X, padx=12, pady=6)
         self.score_label = tk.Label(score_panel, text="Score: 0.0 | Feedback: Ready | Combo: 0 | Total: 0", font=("Arial", 16, "bold"))
         self.score_label.pack(side=tk.LEFT)
+        self.default_score_bg = self.score_label.cget("bg")
         self.config_label = tk.Label(
             score_panel,
             text=f"Model: {config.MODEL_PATH.name} | GPU auto | keypoint conf {config.KEYPOINT_CONF_THRESHOLD}",
@@ -179,12 +187,14 @@ class BonusPoseApp:
             self.status_reference.configure(text=self._video_status_text())
 
     def start_reference(self):
+        self.close_settlement_window()
         if not self.video_path:
             messagebox.showwarning("No Video", "Please select a reference video first.")
             return
         if self.reference_running:
             return
         self.ensure_detector()
+        self.game_over = False
         self.reference_running = True
         self.reference_paused = False
         self.ref_tracker.reset()
@@ -209,13 +219,16 @@ class BonusPoseApp:
             self.cap_reference = None
 
     def restart_reference(self):
+        self.close_settlement_window()
         self.stop_reference()
         self.root.after(150, self.start_reference)
 
     def start_webcam(self):
+        self.close_settlement_window()
         if self.webcam_running:
             return
         self.ensure_detector()
+        self.game_over = False
         self.webcam_running = True
         self.user_tracker.reset()
         self.user_filter.reset()
@@ -231,7 +244,11 @@ class BonusPoseApp:
             self.cap_webcam = None
 
     def reset_score(self):
+        self.close_settlement_window()
+        self.game_over = False
         self.score_manager.reset()
+        self.sound_feedback.reset()
+        self.last_visual_feedback = ""
         self.latest_score_text = "Score 0 | Ready"
         self.score_label.configure(text="Score: 0.0 | Feedback: Ready | Combo: 0 | Total: 0")
         self.stats_label.configure(text="Average: 0.0 | Best: 0.0 | Samples: 0 | P/S/G/M: 0/0/0/0")
@@ -241,6 +258,25 @@ class BonusPoseApp:
     def show_summary(self):
         self.summary_label.configure(text=self.score_manager.summary_text().replace("\n", " | "))
         messagebox.showinfo("Dance Summary", self.score_manager.summary_text())
+
+    def finish_game(self):
+        if self.game_over:
+            return
+        self.game_over = True
+        self.reference_running = False
+        self.reference_paused = False
+        self.webcam_running = False
+        if self.cap_reference is not None:
+            self.cap_reference.release()
+            self.cap_reference = None
+        if self.cap_webcam is not None:
+            self.cap_webcam.release()
+            self.cap_webcam = None
+        self.post_status(self.status_reference, "Reference: ended")
+        self.post_status(self.status_webcam, "Webcam: stopped")
+        self.post_frame(self.label_reference, self.placeholder_frame("Dance complete"))
+        self.post_frame(self.label_webcam, self.placeholder_frame("Camera stopped"))
+        self._post(("game_over", None, self.score_manager.state()))
 
     def reference_loop(self):
         self.cap_reference = cv2.VideoCapture(self.video_path)
@@ -278,16 +314,23 @@ class BonusPoseApp:
                 f"selected {pose_frame.selected_index} | valid {pose_frame.valid_count} | infer {infer_ms:.1f} ms",
             )
             self.post_progress(timestamp)
+            if self.reference_duration > 0 and timestamp >= self.reference_duration:
+                break
+            if self.reference_total_frames > 0 and self.reference_frame_index >= self.reference_total_frames:
+                break
             elapsed = time.perf_counter() - frame_start
             time.sleep(max(0.0, frame_delay - elapsed))
 
+        completed = self.reference_running
         if self.cap_reference is not None:
             self.cap_reference.release()
             self.cap_reference = None
         self.reference_running = False
         self.reference_paused = False
-        self.post_status(self.status_reference, "Reference: ended")
-        self.post_summary()
+        if completed:
+            self.finish_game()
+        else:
+            self.post_status(self.status_reference, "Reference: stopped")
 
     def webcam_loop(self):
         self.cap_webcam = cv2.VideoCapture(0)
@@ -313,18 +356,29 @@ class BonusPoseApp:
                 self.user_filter,
                 swap_left_right=config.MIRROR_WEBCAM and config.SWAP_LEFT_RIGHT,
             )
+            if not self.webcam_running or self.game_over:
+                break
             result = {"score": 0.0, "feedback": "Start reference"}
             offset = 0.0
             if pose_frame.valid_count >= config.MIN_VALID_KEYPOINTS:
                 _, result, offset = self.aligner.match(pose_frame)
             score_state = self.score_manager.update(float(result["score"]), str(result["feedback"]), timestamp, result)
             self.latest_score_text = f"{score_state['feedback']} {score_state['smooth']:.0f} | Combo {score_state['combo']}"
-            rendered = draw_pose(frame, selected, people_count, infer_ms, self.latest_score_text)
+            rendered = draw_pose(
+                frame,
+                selected,
+                people_count,
+                infer_ms,
+                self.latest_score_text,
+                result.get("error_keypoints", []),
+                result.get("error_joints", []),
+                str(result.get("error_summary", "")),
+            )
             self.post_frame(self.label_webcam, rendered)
             self.post_status(
                 self.status_webcam,
                 f"Webcam: running | people {people_count} | valid {pose_frame.valid_count} | "
-                f"infer {infer_ms:.1f} ms | offset {offset:+.2f}s",
+                f"infer {infer_ms:.1f} ms | offset {offset:+.2f}s | user buffer {len(self.aligner.user_frames)}",
             )
             self.post_score(score_state)
 
@@ -403,6 +457,8 @@ class BonusPoseApp:
                 self.update_progress(float(payload))
             elif kind == "summary":
                 self.summary_label.configure(text=str(payload).replace("\n", " | "))
+            elif kind == "game_over":
+                self.show_settlement(payload)
         self.root.after(20, self.process_ui_queue)
 
     def update_score_labels(self, state):
@@ -422,9 +478,31 @@ class BonusPoseApp:
         self.breakdown_label.configure(
             text=(
                 f"Coarse: {state['coarse']:.1f} | Position: {state['position']:.1f} | "
-                f"Angle: {state['angle']:.1f} | Vector: {state['vector']:.1f}"
+                f"Angle: {state['angle']:.1f} | Vector: {state['vector']:.1f} | "
+                f"Fix: {state['error_summary'] or 'None'}"
             )
         )
+        self.trigger_feedback_effect(str(state["feedback"]))
+
+    def trigger_feedback_effect(self, feedback: str):
+        if feedback == self.last_visual_feedback:
+            return
+        self.last_visual_feedback = feedback
+        self.sound_feedback.play(feedback)
+        color = config.FEEDBACK_FLASH_COLORS.get(feedback)
+        if not color:
+            return
+        if self.feedback_flash_job is not None:
+            try:
+                self.root.after_cancel(self.feedback_flash_job)
+            except Exception:
+                pass
+        self.score_label.configure(bg=color)
+        self.feedback_flash_job = self.root.after(config.FEEDBACK_FLASH_MS, self.clear_feedback_flash)
+
+    def clear_feedback_flash(self):
+        self.feedback_flash_job = None
+        self.score_label.configure(bg=self.default_score_bg)
 
     def update_progress(self, timestamp):
         duration = self.reference_duration
@@ -443,7 +521,71 @@ class BonusPoseApp:
         label.imgtk = imgtk
         label.configure(image=imgtk)
 
+    def placeholder_frame(self, text):
+        width, height = config.DISPLAY_SIZE
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+        cv2.putText(image, text, (48, height // 2), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (240, 240, 240), 2, cv2.LINE_AA)
+        return image
+
+    def show_settlement(self, state):
+        self.summary_label.configure(text=self.score_manager.summary_text().replace("\n", " | "))
+        self.update_score_labels(state)
+        if self.settlement_window is not None and self.settlement_window.winfo_exists():
+            self.settlement_window.lift()
+            return
+
+        window = tk.Toplevel(self.root)
+        self.settlement_window = window
+        window.title("Dance Complete")
+        window.geometry("460x360")
+        window.resizable(False, False)
+        window.transient(self.root)
+        window.protocol("WM_DELETE_WINDOW", self.close_settlement_window)
+
+        tk.Label(window, text="Dance Complete", font=("Arial", 22, "bold")).pack(pady=(22, 8))
+        tk.Label(window, text=f"Final Score: {state['total']}", font=("Arial", 28, "bold"), fg="#1f6feb").pack(pady=6)
+        tk.Label(window, text=f"Average: {state['average']:.1f}   Best: {state['best_score']:.1f}", font=("Arial", 13)).pack(pady=4)
+        tk.Label(window, text=f"Best Combo: {state['best_combo']}", font=("Arial", 13)).pack(pady=4)
+        tk.Label(
+            window,
+            text=f"Perfect / Super / Good / Miss: {state['perfect']} / {state['super']} / {state['good']} / {state['miss']}",
+            font=("Arial", 12),
+        ).pack(pady=4)
+        tk.Label(window, text=f"Scored Samples: {state['samples']}", font=("Arial", 12)).pack(pady=4)
+
+        buttons = tk.Frame(window)
+        buttons.pack(pady=20)
+        tk.Button(buttons, text="New Round", width=14, command=self.prepare_new_round).pack(side=tk.LEFT, padx=8)
+        tk.Button(buttons, text="Close", width=14, command=self.close_settlement_window).pack(side=tk.LEFT, padx=8)
+
+    def prepare_new_round(self):
+        self.close_settlement_window()
+        self.reset_score()
+        self.game_over = False
+        self.ref_tracker.reset()
+        self.user_tracker.reset()
+        self.ref_filter.reset()
+        self.user_filter.reset()
+        self.aligner.reset()
+        self.reference_frame_index = 0
+        self.webcam_frame_index = 0
+        self.set_placeholder(self.label_reference, "Click Start to play reference video")
+        self.set_placeholder(self.label_webcam, "Click Start Webcam to begin")
+        self.status_reference.configure(text=self._video_status_text())
+        self.status_webcam.configure(text="Webcam: idle")
+        self.update_progress(0.0)
+
+    def close_settlement_window(self):
+        if self.settlement_window is not None:
+            try:
+                if self.settlement_window.winfo_exists():
+                    self.settlement_window.destroy()
+            except Exception:
+                pass
+            self.settlement_window = None
+
     def on_close(self):
+        self.close_settlement_window()
         self.reference_running = False
         self.webcam_running = False
         self.reference_paused = False

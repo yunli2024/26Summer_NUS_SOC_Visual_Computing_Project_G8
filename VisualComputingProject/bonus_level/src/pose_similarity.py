@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 
@@ -12,7 +12,7 @@ from .pose_features import valid_bone_vectors
 from .pose_types import PoseFrame
 
 
-def compare_poses(reference: PoseFrame, user: PoseFrame) -> Dict[str, float | str]:
+def compare_poses(reference: PoseFrame, user: PoseFrame) -> Dict[str, Any]:
     if reference.normalized_keypoints is None or user.normalized_keypoints is None:
         return empty_result("Pose not detected")
 
@@ -22,6 +22,12 @@ def compare_poses(reference: PoseFrame, user: PoseFrame) -> Dict[str, float | st
 
     distances = np.linalg.norm(reference.normalized_keypoints[common] - user.normalized_keypoints[common], axis=1)
     weights = (reference.confidences[common] + user.confidences[common]) / 2.0
+    common_indices = np.flatnonzero(common)
+    keypoint_errors = {
+        int(idx): float(distance)
+        for idx, distance in zip(common_indices, distances)
+        if float(distance) >= config.KEYPOINT_ERROR_THRESHOLD
+    }
     if float(weights.sum()) <= 1e-6:
         position_score = 0.0
     else:
@@ -30,10 +36,13 @@ def compare_poses(reference: PoseFrame, user: PoseFrame) -> Dict[str, float | st
         position_score = float(np.clip(100.0 * math.exp(-1.45 * weighted_distance), 0.0, 100.0))
 
     angle_scores = []
+    angle_errors = {}
     for name, ref_angle in reference.joint_angles.items():
         if name not in user.joint_angles:
             continue
         diff = abs(ref_angle - user.joint_angles[name])
+        if diff >= config.ANGLE_ERROR_THRESHOLD:
+            angle_errors[name] = float(diff)
         angle_scores.append(max(0.0, 100.0 - diff / 130.0 * 100.0))
     angle_score = float(np.mean(angle_scores)) if angle_scores else position_score
 
@@ -63,6 +72,9 @@ def compare_poses(reference: PoseFrame, user: PoseFrame) -> Dict[str, float | st
         "position": position_score,
         "angle": angle_score,
         "vector": vector_score,
+        "error_keypoints": sorted(keypoint_errors),
+        "error_joints": sorted(angle_errors),
+        "error_summary": error_summary(keypoint_errors, angle_errors),
     }
 
 
@@ -86,7 +98,18 @@ def empty_result(feedback: str):
         "position": 0.0,
         "angle": 0.0,
         "vector": 0.0,
+        "error_keypoints": [],
+        "error_joints": [],
+        "error_summary": "",
     }
+
+
+def error_summary(keypoint_errors: Dict[int, float], angle_errors: Dict[str, float]) -> str:
+    labels = []
+    for idx in sorted(keypoint_errors, key=keypoint_errors.get, reverse=True)[:3]:
+        labels.append(config.COCO_KEYPOINT_NAMES[idx])
+    labels.extend(name.replace("_", " ") for name in sorted(angle_errors, key=angle_errors.get, reverse=True)[:2])
+    return ", ".join(labels[:4])
 
 
 def coarse_pose_score(reference: PoseFrame, user: PoseFrame) -> float:
