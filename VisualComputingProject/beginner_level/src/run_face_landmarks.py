@@ -1,8 +1,7 @@
-"""Main webcam program for Part II face landmark detection.
+"""Beginner Level webcam program.
 
-Run manually when ready:
-    python part2_beginner/src/run_face_landmarks.py
-    python part2_beginner/src/run_face_landmarks.py --clahe
+This file is not run automatically by tests. It opens the camera only when the
+user runs the main command.
 """
 
 from __future__ import annotations
@@ -19,60 +18,66 @@ if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
 import config
-from face_detector import FaceDetector
-from landmark_detector import LandmarkDetector
+from face_detector import ImprovedFaceDetector
+from landmark_detector import SmoothedLandmarkDetector
+from preprocessing import PREPROCESS_MODES, to_gray
 import visualization
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run real-time face landmark detection.")
+    parser = argparse.ArgumentParser(description="Run face landmark detection.")
+    parser.add_argument("--clahe", action="store_true", help="Enable CLAHE preprocessing.")
     parser.add_argument(
-        "--clahe",
-        action="store_true",
-        help="Enable CLAHE preprocessing for the grayscale frame.",
+        "--preprocess",
+        choices=PREPROCESS_MODES,
+        default=config.PREPROCESS_MODE,
+        help="Realtime preprocessing mode.",
     )
+    parser.add_argument("--camera", type=int, default=config.CAMERA_INDEX, help="Camera index.")
     parser.add_argument(
-        "--camera",
-        type=int,
-        default=config.CAMERA_INDEX,
-        help="Camera index used by cv2.VideoCapture.",
+        "--keep-mirror",
+        action="store_true",
+        help="Keep the camera's mirrored image instead of flipping it back.",
+    )
+    parser.add_argument("--scale-factor", type=float, default=config.FACE_SCALE_FACTOR)
+    parser.add_argument("--min-neighbors", type=int, default=config.FACE_MIN_NEIGHBORS)
+    parser.add_argument("--min-size", type=int, default=config.FACE_MIN_SIZE[0])
+    parser.add_argument("--max-size", type=int, default=config.FACE_MAX_SIZE[0])
+    parser.add_argument(
+        "--single-face",
+        action="store_true",
+        help="Track only the most stable face instead of all detected faces.",
     )
     return parser.parse_args()
 
 
-def preprocess_frame(frame, use_clahe: bool):
-    """Convert BGR frame to grayscale and optionally apply CLAHE."""
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    if not use_clahe:
-        return gray, "gray"
-
-    clahe = cv2.createCLAHE(
-        clipLimit=config.CLAHE_CLIP_LIMIT,
-        tileGridSize=config.CLAHE_TILE_GRID_SIZE,
-    )
-    return clahe.apply(gray), "CLAHE"
-
-
 def open_camera(camera_index: int):
-    """Open the selected camera and report a clear error if it fails."""
     cap = cv2.VideoCapture(camera_index)
     if not cap.isOpened():
-        raise RuntimeError(
-            f"Cannot open camera index {camera_index}. "
-            "Check camera permission, camera index, or whether another app is using it."
-        )
+        raise RuntimeError(f"Cannot open camera index {camera_index}.")
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.FRAME_WIDTH)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.FRAME_HEIGHT)
     return cap
 
 
+def apply_runtime_config(args: argparse.Namespace) -> None:
+    config.FACE_SCALE_FACTOR = args.scale_factor
+    config.FACE_MIN_NEIGHBORS = args.min_neighbors
+    config.FACE_MIN_SIZE = (args.min_size, args.min_size)
+    config.FACE_MAX_SIZE = (args.max_size, args.max_size)
+    config.SINGLE_FACE_MODE = args.single_face
+    config.UNMIRROR_CAMERA = not args.keep_mirror
+    config.PREPROCESS_MODE = "clahe" if args.clahe else args.preprocess
+
+
 def main() -> int:
     args = parse_args()
-    use_clahe = args.clahe or config.USE_CLAHE
+    apply_runtime_config(args)
+    use_clahe = config.PREPROCESS_MODE == "clahe"
 
     try:
-        face_detector = FaceDetector()
-        landmark_detector = LandmarkDetector()
+        face_detector = ImprovedFaceDetector()
+        landmark_detector = SmoothedLandmarkDetector()
         cap = open_camera(args.camera)
     except (FileNotFoundError, RuntimeError) as exc:
         print(f"Setup error: {exc}")
@@ -80,19 +85,35 @@ def main() -> int:
 
     print("Camera started. Press q to quit.")
     last_time = time.perf_counter()
-
     try:
         while True:
             ok, frame = cap.read()
             if not ok:
                 print("Camera frame read failed. Exiting.")
                 break
+            if config.UNMIRROR_CAMERA:
+                frame = cv2.flip(frame, 1)
 
-            gray, preprocessing_name = preprocess_frame(frame, use_clahe)
-            faces = face_detector.detect(gray)
-            landmark_ok, landmarks, message = landmark_detector.fit(gray, faces)
+            gray, preprocess_name = to_gray(frame, use_clahe, mode=config.PREPROCESS_MODE)
+            detection = face_detector.detect(gray)
+            landmark_ok, landmarks, message = landmark_detector.fit(
+                gray,
+                detection.faces,
+                detection.status,
+            )
+            faces_to_draw = detection.faces
+            pose_labels = []
+            if detection.detected_now:
+                if landmark_ok:
+                    faces_to_draw = landmark_detector.last_valid_faces
+                    pose_labels = landmark_detector.last_pose_labels
+                    face_detector.confirm_faces(faces_to_draw)
+                else:
+                    face_detector.reject_current_detection()
+                    faces_to_draw = []
+                    detection.status = "REJECTED"
 
-            visualization.draw_faces(frame, faces)
+            visualization.draw_faces(frame, faces_to_draw, detection.status, pose_labels)
             if landmark_ok:
                 visualization.draw_landmarks(frame, landmarks)
 
@@ -100,26 +121,35 @@ def main() -> int:
             fps = 1.0 / max(now - last_time, 1e-6)
             last_time = now
 
-            if len(faces) == 0:
-                message = "No face detected"
-
-            visualization.draw_fps(frame, fps)
-            visualization.draw_status(frame, message, preprocessing_name)
+            visualization.draw_status(
+                frame,
+                fps=fps,
+                status=detection.status,
+                raw_count=detection.raw_count,
+                filtered_count=detection.filtered_count,
+                selected_size=_selected_size(faces_to_draw, detection.selected_size),
+                clahe_enabled=use_clahe,
+                failed_frames=detection.failed_frames,
+                message=f"{message}; preprocess={preprocess_name}",
+            )
             cv2.imshow(config.WINDOW_NAME, frame)
-
             if cv2.getWindowProperty(config.WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
                 print("Window closed by user.")
                 break
-
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord(config.QUIT_KEY):
+            if cv2.waitKey(1) & 0xFF == ord(config.QUIT_KEY):
                 print("Quit key pressed.")
                 break
     finally:
         cap.release()
         cv2.destroyAllWindows()
-
     return 0
+
+
+def _selected_size(faces, fallback):
+    if faces is None or len(faces) == 0:
+        return fallback
+    face = faces[0]
+    return int(face[2]), int(face[3])
 
 
 if __name__ == "__main__":

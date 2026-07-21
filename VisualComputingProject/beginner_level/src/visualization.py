@@ -1,4 +1,4 @@
-"""Drawing helpers for face boxes, landmarks, FPS, and status text."""
+"""Visualization helpers for the improved Beginner Level."""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ import cv2
 
 
 FACE_COLOR = (0, 255, 0)
+FALLBACK_FACE_COLOR = (0, 220, 255)
+LOST_COLOR = (0, 0, 255)
 LANDMARK_COLOR = (0, 0, 255)
 LANDMARK_GROUPS = [
     (range(0, 17), (255, 180, 0), "jaw"),
@@ -16,21 +18,32 @@ LANDMARK_GROUPS = [
 ]
 LANDMARK_LABEL_INDICES = {0, 8, 16, 27, 30, 36, 45, 48, 54, 66}
 TEXT_COLOR = (255, 255, 255)
-WARNING_COLOR = (0, 220, 255)
 
 
-def draw_faces(frame, faces) -> None:
-    """Draw rectangles around detected faces."""
-    for x, y, w, h in faces:
-        cv2.rectangle(frame, (x, y), (x + w, y + h), FACE_COLOR, 2)
+def draw_faces(frame, faces, status: str, pose_labels=None) -> None:
+    color = FALLBACK_FACE_COLOR if status == "CACHED" else FACE_COLOR
+    if status == "REJECTED":
+        color = LOST_COLOR
+    pose_labels = pose_labels or []
+    for index, (x, y, w, h) in enumerate(faces):
+        cv2.rectangle(frame, (int(x), int(y)), (int(x + w), int(y + h)), color, 2)
+        if index < len(pose_labels):
+            cv2.putText(
+                frame,
+                pose_labels[index],
+                (int(x), max(18, int(y) - 8)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.48,
+                color,
+                2,
+                cv2.LINE_AA,
+            )
 
 
 def draw_landmarks(frame, landmarks) -> None:
-    """Draw and label the 68 facial keypoints."""
-    for face_landmarks in landmarks:
-        points = face_landmarks[0]
-        for point_index, point in enumerate(points):
-            x, y = int(point[0]), int(point[1])
+    for points in landmarks:
+        for point_index, (x, y) in enumerate(points):
+            x, y = int(x), int(y)
             cv2.circle(frame, (x, y), 2, _landmark_color(point_index), -1)
             if point_index in LANDMARK_LABEL_INDICES:
                 cv2.putText(
@@ -52,39 +65,31 @@ def _landmark_color(point_index: int):
     return LANDMARK_COLOR
 
 
-def draw_fps(frame, fps: float) -> None:
-    """Draw FPS in the top-left corner."""
-    cv2.putText(
-        frame,
+def draw_status(
+    frame,
+    fps: float,
+    status: str,
+    raw_count: int,
+    filtered_count: int,
+    selected_size,
+    clahe_enabled: bool,
+    failed_frames: int,
+    message: str,
+) -> None:
+    face_size = "none" if selected_size is None else f"{selected_size[0]}x{selected_size[1]}"
+    lines = [
+        f"STATE: {status}",
         f"FPS: {fps:.1f}",
-        (10, 25),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.7,
-        TEXT_COLOR,
-        2,
-        cv2.LINE_AA,
-    )
-
-
-def draw_status(frame, message: str, preprocessing_name: str) -> None:
-    """Draw current preprocessing mode and status message."""
-    cv2.putText(
-        frame,
-        f"Preprocess: {preprocessing_name}",
-        (10, 55),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        TEXT_COLOR,
-        2,
-        cv2.LINE_AA,
-    )
-    cv2.putText(
-        frame,
+        f"Candidates raw/kept: {raw_count}/{filtered_count}",
+        f"Face box size: {face_size}",
+        "Keypoints: 68 LBF points, colored by facial region",
+        f"CLAHE: {clahe_enabled}",
+        f"Failed frames: {failed_frames}",
         message,
-        (10, 85),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        WARNING_COLOR,
-        2,
-        cv2.LINE_AA,
-    )
+    ]
+    y = 25
+    status_color = FACE_COLOR if status == "DETECTED" else FALLBACK_FACE_COLOR if status == "CACHED" else LOST_COLOR
+    for line in lines:
+        color = status_color if line.startswith("STATE:") else TEXT_COLOR
+        cv2.putText(frame, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.58, color, 2, cv2.LINE_AA)
+        y += 26
