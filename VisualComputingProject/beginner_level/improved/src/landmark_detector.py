@@ -27,12 +27,10 @@ class SmoothedLandmarkDetector:
             self.facemark.loadModel(str(self.model_path))
         except cv2.error as exc:
             raise RuntimeError(f"Failed to load LBF model: {self.model_path}") from exc
-        self.previous_landmarks = None
-        self.previous_face = None
+        self.previous_tracks = []
 
     def reset(self) -> None:
-        self.previous_landmarks = None
-        self.previous_face = None
+        self.previous_tracks = []
 
     def fit(self, gray_frame, faces, detection_status: str):
         if detection_status == "CACHED":
@@ -52,27 +50,35 @@ class SmoothedLandmarkDetector:
 
         current = [np.asarray(face_points, dtype=np.float32).reshape(-1, 2) for face_points in landmarks]
         smoothed = []
+        next_tracks = []
         for idx, points in enumerate(current):
             face = tuple(int(v) for v in faces[idx])
             if len(points) != 68:
                 smoothed.append(points)
+                next_tracks.append((face, points))
                 continue
-            if self._should_reset(points, face):
+            previous_points = self._match_previous(face)
+            if previous_points is None:
                 smoothed_points = points
             else:
                 alpha = config.LANDMARK_SMOOTHING_ALPHA
-                smoothed_points = alpha * points + (1.0 - alpha) * self.previous_landmarks
+                smoothed_points = alpha * points + (1.0 - alpha) * previous_points
             smoothed.append(smoothed_points)
-            self.previous_landmarks = smoothed_points
-            self.previous_face = face
+            next_tracks.append((face, smoothed_points))
+        self.previous_tracks = next_tracks
         return True, smoothed, "Landmarks detected"
 
-    def _should_reset(self, points, face) -> bool:
-        if self.previous_landmarks is None or self.previous_face is None:
-            return True
-        if len(self.previous_landmarks) != len(points):
-            return True
-        return _face_iou(self.previous_face, face) < config.FACE_CHANGE_IOU_THRESHOLD
+    def _match_previous(self, face):
+        best_iou = 0.0
+        best_points = None
+        for previous_face, previous_points in self.previous_tracks:
+            overlap = _face_iou(previous_face, face)
+            if overlap > best_iou:
+                best_iou = overlap
+                best_points = previous_points
+        if best_iou < config.FACE_CHANGE_IOU_THRESHOLD:
+            return None
+        return best_points
 
 
 def _face_iou(face_a, face_b) -> float:

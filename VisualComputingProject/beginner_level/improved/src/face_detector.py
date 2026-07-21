@@ -65,11 +65,12 @@ class ImprovedFaceDetector:
         filtered_count = len(faces)
 
         if len(faces) > 0:
-            selected = self._select_face(faces)
-            if selected is not None:
-                faces = np.asarray([selected], dtype=np.int32)
+            selected_faces = self._select_faces(faces)
+            if len(selected_faces) > 0:
+                faces = np.asarray(selected_faces, dtype=np.int32)
                 self.last_faces = faces
                 self.failed_frames = 0
+                selected = faces[0]
                 return FaceDetectionResult(
                     faces=faces,
                     raw_count=raw_count,
@@ -114,13 +115,10 @@ class ImprovedFaceDetector:
             message="Face lost",
         )
 
-    def _select_face(self, faces):
+    def _select_faces(self, faces):
         faces = self._sort_faces(faces)
         if not config.SINGLE_FACE_MODE or len(self.last_faces) == 0:
-            candidate = faces[0]
-            if self._looks_like_inner_false_positive(candidate):
-                return None
-            return candidate
+            return [face for face in faces if not self._looks_like_inner_false_positive(face)]
 
         last = self.last_faces[0]
         scored = []
@@ -131,9 +129,13 @@ class ImprovedFaceDetector:
             overlap_score = _iou(last, face)
             scored.append((overlap_score, area_score, face))
         if not scored:
-            return None
+            return []
         scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
-        return scored[0][2]
+        return [scored[0][2]]
+
+    def _select_face(self, faces):
+        selected = self._select_faces(faces)
+        return selected[0] if selected else None
 
     def _looks_like_inner_false_positive(self, face) -> bool:
         if len(self.last_faces) == 0:

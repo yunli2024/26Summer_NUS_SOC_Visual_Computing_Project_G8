@@ -32,6 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-neighbors", type=int, default=config.FACE_MIN_NEIGHBORS)
     parser.add_argument("--min-size", type=int, default=config.FACE_MIN_SIZE[0])
     parser.add_argument("--max-size", type=int, default=config.FACE_MAX_SIZE[0])
+    parser.add_argument(
+        "--single-face",
+        action="store_true",
+        help="Track only the most stable face instead of all detected faces.",
+    )
     return parser.parse_args()
 
 
@@ -49,6 +54,7 @@ def apply_runtime_config(args: argparse.Namespace) -> None:
     config.FACE_MIN_NEIGHBORS = args.min_neighbors
     config.FACE_MIN_SIZE = (args.min_size, args.min_size)
     config.FACE_MAX_SIZE = (args.max_size, args.max_size)
+    config.SINGLE_FACE_MODE = args.single_face
 
 
 def main() -> int:

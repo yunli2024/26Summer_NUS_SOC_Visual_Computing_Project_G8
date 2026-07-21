@@ -9,6 +9,14 @@ FACE_COLOR = (0, 255, 0)
 FALLBACK_FACE_COLOR = (0, 220, 255)
 LOST_COLOR = (0, 0, 255)
 LANDMARK_COLOR = (0, 0, 255)
+LANDMARK_GROUPS = [
+    (range(0, 17), (255, 180, 0), "jaw"),
+    (range(17, 27), (0, 220, 255), "brow"),
+    (range(27, 36), (255, 0, 255), "nose"),
+    (range(36, 48), (0, 255, 255), "eye"),
+    (range(48, 68), (0, 0, 255), "mouth"),
+]
+LANDMARK_LABEL_INDICES = {0, 8, 16, 27, 30, 36, 45, 48, 54, 66}
 TEXT_COLOR = (255, 255, 255)
 
 
@@ -20,8 +28,27 @@ def draw_faces(frame, faces, status: str) -> None:
 
 def draw_landmarks(frame, landmarks) -> None:
     for points in landmarks:
-        for x, y in points:
-            cv2.circle(frame, (int(x), int(y)), 2, LANDMARK_COLOR, -1)
+        for point_index, (x, y) in enumerate(points):
+            x, y = int(x), int(y)
+            cv2.circle(frame, (x, y), 2, _landmark_color(point_index), -1)
+            if point_index in LANDMARK_LABEL_INDICES:
+                cv2.putText(
+                    frame,
+                    str(point_index),
+                    (x + 3, y - 3),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.35,
+                    TEXT_COLOR,
+                    1,
+                    cv2.LINE_AA,
+                )
+
+
+def _landmark_color(point_index: int):
+    for indices, color, _name in LANDMARK_GROUPS:
+        if point_index in indices:
+            return color
+    return LANDMARK_COLOR
 
 
 def draw_status(
@@ -41,6 +68,7 @@ def draw_status(
         f"FPS: {fps:.1f}",
         f"Candidates raw/kept: {raw_count}/{filtered_count}",
         f"Face box size: {face_size}",
+        "Keypoints: 68 LBF points, colored by facial region",
         f"CLAHE: {clahe_enabled}",
         f"Failed frames: {failed_frames}",
         message,
