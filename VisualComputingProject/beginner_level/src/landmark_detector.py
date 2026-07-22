@@ -163,6 +163,8 @@ class DisplayLandmarkSmoother:
             return self.smoothed
         alpha = np.full((68, 1), self.alpha, dtype=np.float32)
         alpha[0:17] = self.jaw_alpha
+        if _is_open_mouth(current):
+            alpha[48:68] = config.DISPLAY_OPEN_MOUTH_ALPHA
         self.smoothed = alpha * current + (1.0 - alpha) * self.smoothed
         return self.smoothed
 
@@ -206,6 +208,16 @@ class LandmarkSmoother:
         max_x = x + w * (1.0 + config.LANDMARK_JAW_BOUND_MARGIN_X)
         min_y = y + h * config.LANDMARK_JAW_BOUND_TOP_RATIO
         max_y = y + h * config.LANDMARK_JAW_BOUND_BOTTOM_RATIO
+        interior_center_x = float(np.mean(constrained[[27, 30, 33, 51, 57], 0]))
+        left_eye = constrained[36:42].mean(axis=0)
+        right_eye = constrained[42:48].mean(axis=0)
+        eye_distance = float(np.linalg.norm(right_eye - left_eye))
+        interior_half_width = max(
+            eye_distance * config.LANDMARK_JAW_EYE_HALF_WIDTH_RATIO,
+            w * config.LANDMARK_JAW_MIN_HALF_WIDTH_RATIO,
+        )
+        min_x = max(min_x, interior_center_x - interior_half_width)
+        max_x = min(max_x, interior_center_x + interior_half_width)
         constrained[0:17, 0] = np.clip(constrained[0:17, 0], min_x, max_x)
         constrained[0:17, 1] = np.clip(constrained[0:17, 1], min_y, max_y)
         return constrained
@@ -214,12 +226,15 @@ class LandmarkSmoother:
         current = landmarks.astype(np.float32, copy=False)
         face = np.asarray(face, dtype=np.float32)
         current = self._constrain_jawline(current, face)
+        current = _stabilize_open_mouth_lower_lip(current, face)
         if self._should_reset(current, face):
             self.smoothed = current.copy()
         else:
             face_scale = max(float(face[2]), float(face[3]), 1.0)
             max_delta = np.full((68, 1), face_scale * config.LANDMARK_MAX_POINT_JUMP_RATIO, dtype=np.float32)
             max_delta[0:17] = face_scale * config.LANDMARK_JAW_MAX_POINT_JUMP_RATIO
+            if _is_open_mouth(current):
+                max_delta[48:68] = face_scale * config.LANDMARK_MOUTH_MAX_POINT_JUMP_RATIO
             delta = current - self.smoothed
             distance = np.linalg.norm(delta, axis=1, keepdims=True)
             scale = np.minimum(1.0, max_delta / np.maximum(distance, 1e-6))
@@ -228,8 +243,11 @@ class LandmarkSmoother:
             alpha[0:17] = config.LANDMARK_ALPHA_JAW
             alpha[36:48] = config.LANDMARK_ALPHA_EYES_MOUTH
             alpha[48:68] = config.LANDMARK_ALPHA_EYES_MOUTH
+            if _is_open_mouth(current):
+                alpha[48:68] = config.LANDMARK_ALPHA_OPEN_MOUTH
             self.smoothed = alpha * current + (1.0 - alpha) * self.smoothed
             self.smoothed = self._constrain_jawline(self.smoothed, face)
+            self.smoothed = _stabilize_open_mouth_lower_lip(self.smoothed, face)
         self.previous_face = face.copy()
         self.previous_eye_angle = self._eye_angle(current)
         return self.smoothed
@@ -303,6 +321,28 @@ def _pose_adjusted_display_landmarks(landmarks: np.ndarray, face: np.ndarray, he
     return display
 
 
+def _is_open_mouth(landmarks: np.ndarray, face=None) -> bool:
+    if face is None:
+        face_h = max(float(np.ptp(landmarks[:, 1])), 1.0)
+    else:
+        face_h = max(float(face[3]), 1.0)
+    outer_open = float(landmarks[57, 1] - landmarks[51, 1])
+    inner_open = float(landmarks[66, 1] - landmarks[62, 1])
+    return max(outer_open, inner_open) / face_h >= config.MOUTH_OPEN_RATIO
+
+
+def _stabilize_open_mouth_lower_lip(landmarks: np.ndarray, face: np.ndarray) -> np.ndarray:
+    if not _is_open_mouth(landmarks, face):
+        return landmarks
+    adjusted = landmarks.copy()
+    face_h = max(float(face[3]), 1.0)
+    upper_lip_y = float(np.mean(adjusted[[50, 51, 52, 61, 62, 63], 1]))
+    min_lower_y = upper_lip_y + face_h * config.MOUTH_OPEN_LOWER_LIP_MIN_GAP_RATIO
+    lower_lip_indices = [55, 56, 57, 58, 59, 65, 66, 67]
+    adjusted[lower_lip_indices, 1] = np.maximum(adjusted[lower_lip_indices, 1], min_lower_y)
+    return adjusted
+
+
 def _face_iou(face_a, face_b) -> float:
     ax, ay, aw, ah = face_a
     bx, by, bw, bh = face_b
@@ -355,7 +395,7 @@ def _validate_landmarks(points, face, image_shape):
     if spread_y < h * config.LANDMARK_MIN_FACE_SPREAD_RATIO:
         return False, "landmark_height_too_small", None
 
-    pose = estimate_head_pose(points, image_shape)
+    pose = _pose_with_2d_yaw_fallback(points, face, estimate_head_pose(points, image_shape))
     return True, "ok", pose
 
 
@@ -364,3 +404,27 @@ def _pose_label(pose):
         return "Pose: unknown"
     yaw, pitch, _roll = pose
     return f"{classify_head_pose(yaw, pitch)} yaw={yaw:.0f} pitch={pitch:.0f}"
+
+
+def _pose_with_2d_yaw_fallback(points, face, pose):
+    if not config.POSE_USE_2D_YAW_FALLBACK:
+        return pose
+
+    x, y, w, h = [float(value) for value in face]
+    if w <= 0 or h <= 0:
+        return pose
+
+    nose_tip = points[30]
+    box_center_x = x + w / 2.0
+    yaw_2d = (float(nose_tip[0]) - box_center_x) / max(w, 1.0) * config.POSE_2D_YAW_SCALE
+    yaw_2d = float(np.clip(yaw_2d, -config.POSE_2D_MAX_ABS_YAW, config.POSE_2D_MAX_ABS_YAW))
+
+    if pose is None:
+        return yaw_2d, 0.0, 0.0
+
+    yaw, pitch, roll = pose
+    if abs(float(pitch)) > config.POSE_MAX_REASONABLE_ABS_PITCH:
+        pitch = 0.0
+    if abs(yaw_2d) > abs(float(yaw)) + 8.0:
+        yaw = yaw_2d
+    return float(yaw), float(pitch), float(roll)

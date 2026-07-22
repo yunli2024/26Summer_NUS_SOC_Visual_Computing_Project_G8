@@ -93,6 +93,42 @@ English: The 68-keypoint stability has also been improved using the expert versi
 
 English: For head-turn recognition, the system continues to estimate yaw, pitch, and roll from the 68 landmarks, and now adds the expert demo's pose-aware jawline display adjustment. When the user turns left or right, LBF may keep a frontal jaw template and make the contour float away from the visible face. The display layer now narrows and slightly lifts the jawline according to yaw, making side-face landmark visualization closer to the actual visible face.
 
+中文：根据左转头时 keypoints 对不上的问题，姿态估计又增加了 2D yaw fallback。实际测试中，左转时 `solvePnP` 有时会把 yaw 低估，同时给出接近 160 度的异常 pitch，导致侧脸下颌显示修正没有触发。现在系统会额外检查鼻尖相对人脸框中心的水平偏移；当 3D 姿态估计明显异常或 yaw 被低估时，会用这个 2D yaw 作为兜底，使左转和右转都能触发 pose-aware keypoint 修正。
+
+English: To fix the mismatch when turning the head left, a 2D yaw fallback has been added to pose estimation. In testing, `solvePnP` sometimes underestimated yaw during left turns while producing an abnormal pitch near 160 degrees, so the side-face jawline correction was not triggered. The system now also checks the horizontal offset of the nose tip relative to the face-box center. When the 3D pose estimate is clearly unstable or yaw is underestimated, this 2D yaw is used as a fallback so both left and right head turns can trigger pose-aware keypoint adjustment.
+
+中文：根据张大嘴巴时口腔区域被误检测成第二张脸的问题，检测阶段新增了嵌套小脸过滤。系统会先按面积保留大的人脸框；如果另一个候选框大部分落在该大脸内部、面积明显更小，并且中心位于大脸下半部，则认为它更可能是嘴巴/下巴区域的误检，而不是第二张真实人脸。这样可以保留多人场景，同时减少张嘴时出现的口腔假人脸框和重复 keypoints。
+
+English: To address the false detection caused by a widely opened mouth, nested small-face filtering has been added during detection. The system keeps larger face boxes first; if another candidate lies mostly inside a larger face, is much smaller, and has its center in the lower half of that larger face, it is treated as a mouth/chin false positive rather than a second real face. This keeps multi-person support while reducing fake mouth-region face boxes and duplicate keypoints when the mouth is open.
+
+中文：针对张大嘴时下嘴唇 keypoints 错位的问题，嘴部区域现在加入了 open-mouth 动态处理。系统会检测外嘴唇和内嘴唇的张开比例；当嘴巴明显张开时，嘴部关键点使用更高的平滑更新系数和更大的单帧位移上限，让下嘴唇能更快跟随真实位置。同时，下嘴唇相关点位会受到轻量几何约束，避免它们被平滑拖在上嘴唇、牙齿或口腔内部过高的位置。
+
+English: To fix lower-lip keypoint drift when the mouth opens widely, open-mouth dynamic handling has been added for the mouth region. The system checks the opening ratio of the outer and inner lips. When the mouth is clearly open, mouth landmarks use a higher smoothing update factor and a larger per-frame movement limit, allowing the lower lip to follow the real position faster. A light geometric constraint is also applied to lower-lip landmarks so they are not dragged too high toward the upper lip, teeth, or inside-mouth region.
+
+中文：针对正脸时右侧脸颊/下颌线 keypoints 被拉到人脸框边缘的问题，下颌线约束进一步增强。除了原有的人脸框范围约束外，现在还会根据眼距、鼻子和嘴部中心估算真实脸部内部宽度，限制下颌线左右两侧不要过度漂向背景或耳朵区域。这样可以减少人脸框偏宽时 cyan 下颌点外移的问题。
+
+English: To fix cheek and jawline keypoints drifting toward the face-box edge in frontal views, the jawline constraint has been strengthened. In addition to the original face-box bounds, the system estimates the internal face width from eye distance and the nose/mouth center, then prevents jawline points from drifting too far into the background or ear area. This reduces cyan jawline displacement when the detected face box is wider than the visible face.
+
+中文：针对灯光较暗时识别效果变差的问题，视频帧现在会先进行低光增强，再进入人脸检测和 68 点 keypoint 拟合。增强流程在 BGR 视频帧上执行：先转换到 HSV 空间，对亮度 V 通道进行 gamma 提亮，再使用 CLAHE 增强局部对比度，最后与原图按比例融合。这样显示画面、人脸框检测和 LBF keypoint 拟合都使用增强后的图像，而不是只对灰度检测图做 CLAHE。状态栏会显示 `video-lowlight(...)` 或 `video-enhanced`，便于确认当前是否触发低光增强。
+
+English: To improve recognition under dim lighting, each video frame is now enhanced before face detection and 68-point keypoint fitting. The enhancement runs on the BGR frame: it converts the frame to HSV, applies gamma brightening to the V channel, applies CLAHE for local contrast, and blends the enhanced result with the original frame. Therefore, the displayed image, Haar face detection, and LBF keypoint fitting all use the enhanced image, instead of applying CLAHE only to the grayscale detection image. The status text shows `video-lowlight(...)` or `video-enhanced` so it is clear when low-light enhancement is active.
+
+中文：根据低光增强后画面变模糊、识别不稳定的问题，低光预处理已改为更保守的清晰增强。新版不再强力拉高 HSV 的 V 通道，而是在 YCrCb 色彩空间中只增强亮度 Y 通道，降低 gamma 和 CLAHE 强度，并降低增强图与原图的融合比例。同时加入轻量 unsharp mask 锐化，尽量保留眼睛、嘴唇、鼻梁等 LBF 需要的局部边缘纹理，减少过度提亮带来的噪声和糊感。
+
+English: After observing blur and instability from the previous low-light enhancement, the preprocessing has been changed to a more conservative clarity-focused enhancement. Instead of strongly boosting the HSV V channel, the new version enhances only the Y luminance channel in YCrCb space, lowers the gamma and CLAHE strength, and reduces the blend ratio between the enhanced frame and the original frame. A light unsharp mask is also applied to preserve local edge details around the eyes, lips, and nose bridge, reducing noise amplification and softness caused by over-enhancement.
+
+中文：为了方便在 demo 中直接比较不同预处理效果，现在支持运行时键盘切换。按 `1` 使用 `raw`，按 `2` 使用 `clahe`，按 `3` 使用 `gamma`，按 `4` 使用 `clahe-gamma`，按 `v` 开关整帧低光视频增强，按 `m` 开关镜像修正，按 `r` 重置检测缓存和平滑状态，按 `q` 退出。每次切换都会清空上一模式的缓存，避免旧的人脸框或 keypoint 平滑结果影响对比。
+
+English: To compare preprocessing effects directly in the demo, runtime keyboard switching is now supported. Press `1` for `raw`, `2` for `clahe`, `3` for `gamma`, `4` for `clahe-gamma`, `v` to toggle full-frame low-light video enhancement, `m` to toggle mirror correction, `r` to reset detection cache and smoothing state, and `q` to quit. Each switch clears the previous mode's cache so old face boxes or smoothed keypoints do not affect the comparison.
+
+| Mode / 模式 | Best Use / 适用场景 | Advantage / 优点 | Risk / 风险 |
+|---|---|---|---|
+| `raw` | Bright, stable lighting / 明亮稳定光照 | Preserves original image, least processing noise / 保留原图，噪声最少 | Weak under dim light / 暗光下较弱 |
+| `clahe` | Uneven or dim lighting / 光照不均或偏暗 | Improves local contrast for eyes, nose, mouth / 提升眼鼻嘴局部对比 | Can amplify noise slightly / 可能轻微放大噪声 |
+| `gamma` | Globally dark image / 整体偏暗 | Brightens the whole grayscale image / 整体提亮灰度图 | May wash out highlights / 可能让亮部变平 |
+| `clahe-gamma` | Very dark but still detailed image / 很暗但仍有纹理 | Strongest grayscale enhancement / 灰度增强最强 | Highest noise/over-enhancement risk / 噪声和过增强风险最高 |
+| `video enhance` (`v`) | Low-light live demo / 暗光实时演示 | Enhances BGR frame before detection, landmarks, and display / 在检测、关键点、显示前增强整帧 | If too dark/noisy, may still reduce stability / 极暗或高噪声下仍可能不稳定 |
+
 ## Implementation Logic / 实现原理与逻辑
 
 中文：整体流程是“视频输入 -> 灰度预处理 -> 人脸检测 -> 人脸框筛选/稳定 -> 关键点拟合 -> 可视化输出”。基础版直接对灰度图运行 Haar 分类器，并用 LBF 模型拟合关键点；改进版在此基础上加入了边界 padding、候选框过滤、短时缓存、多脸检测和关键点平滑。
@@ -108,6 +144,14 @@ English: The Haar Cascade searches for likely face regions with a sliding-window
 中文：项目确实已经识别了 keypoints。现在 demo 中的关键点可视化进一步增强：68 个点会按脸部区域使用不同颜色显示，并对若干代表性关键点进行编号标注，例如下颌边缘、鼻梁/鼻尖、眼角、嘴角和下唇点。这比单纯绘制红点更容易展示“模型确实检测到了 facial landmarks”。
 
 English: Yes, the project detects keypoints. The demo has now been enhanced so the 68 landmarks are color-coded by facial region, with representative indices labeled around the jaw, nose bridge/tip, eye corners, mouth corners, and lower lip. This makes the landmark detection result clearer than drawing plain red dots only.
+
+中文：根据界面文字遮挡人脸的问题，HUD 显示已改为左上角小型半透明状态面板，只保留状态、FPS、人脸数量、框大小、预处理模式和失败帧数等必要信息。原来横跨画面的长提示文字和人脸框上方的姿态文字默认关闭，避免遮挡人脸、五官和关键点展示。
+
+English: To solve the issue where on-screen text blocked the face, the HUD has been changed to a compact semi-transparent status panel in the top-left corner. It now only shows essential information such as state, FPS, face count, box size, preprocessing mode, and missed frames. The long full-width help text and pose text above the face box are disabled by default so they no longer cover the face, facial features, or keypoints.
+
+中文：根据低光视频增强导致正常人脸无法稳定识别的问题，视频增强逻辑已调整。原因是之前增强帧被直接送入 Haar 和 LBF 检测链路，gamma、CLAHE 和锐化会在正常背光或眼镜反光场景中放大噪声，反而降低人脸框和 keypoint 的稳定性。现在 `ENHANCE_VIDEO_FRAME` 默认关闭；即使手动按 `v` 开启，也只影响显示画面，不再改变检测和关键点识别使用的原始帧。识别链路继续使用稳定的灰度/CLAHE 预处理。
+
+English: To address the problem where low-light video enhancement made normal face detection unstable, the enhancement pipeline has been changed. Previously, the enhanced frame was passed directly into Haar and LBF detection; gamma, CLAHE, and sharpening could amplify noise and glasses reflections in normal backlit scenes, making face boxes and keypoints less stable. `ENHANCE_VIDEO_FRAME` is now off by default. Even when manually enabled with `v`, it only affects the displayed preview and no longer changes the original frame used for detection and landmark fitting. The recognition pipeline continues to use stable grayscale/CLAHE preprocessing.
 
 ## Optimizations Already Made / 已经完成的优化
 
@@ -179,4 +223,17 @@ python .\VisualComputingProject\beginner_level\main.py --clahe
 python .\VisualComputingProject\beginner_level\main.py --preprocess clahe-gamma
 python .\VisualComputingProject\beginner_level\main.py --single-face
 python .\VisualComputingProject\beginner_level\main.py --keep-mirror
+```
+
+Runtime keys / 运行时按键：
+
+```text
+1 raw
+2 clahe
+3 gamma
+4 clahe-gamma
+v toggle video enhancement
+m toggle mirror correction
+r reset detection cache
+q quit
 ```

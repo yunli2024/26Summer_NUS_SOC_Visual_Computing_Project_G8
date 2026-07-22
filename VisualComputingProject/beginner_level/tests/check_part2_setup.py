@@ -20,8 +20,14 @@ if str(SRC_DIR) not in sys.path:
 
 import config
 from face_detector import ImprovedFaceDetector
-from landmark_detector import SmoothedLandmarkDetector, _validate_landmarks
-from preprocessing import to_gray
+from landmark_detector import (
+    LandmarkSmoother,
+    SmoothedLandmarkDetector,
+    _pose_with_2d_yaw_fallback,
+    _stabilize_open_mouth_lower_lip,
+    _validate_landmarks,
+)
+from preprocessing import enhance_frame_for_detection, to_gray
 
 
 def check(name: str, passed: bool, detail: str = "") -> bool:
@@ -67,6 +73,9 @@ def main() -> int:
         inner = np.asarray([(145, 145, 45, 45)], dtype=np.int32)
         selected = detector._select_face(inner)
         results.append(check("Inner shrunken false positive rejected", selected is None))
+        nested_faces = np.asarray([(100, 80, 240, 240), (160, 220, 100, 100)], dtype=np.int32)
+        filtered_nested = detector._reject_nested_mouth_faces(nested_faces)
+        results.append(check("Nested mouth false face rejected", len(filtered_nested) == 1))
         fallback = detector._fallback(raw_count=0, filtered_count=0)
         results.append(check("Fallback status is cached", fallback.status == "CACHED"))
         detector.reject_current_detection()
@@ -90,14 +99,45 @@ def main() -> int:
         )
         valid, _reason, _pose = _validate_landmarks(loose_points, np.asarray((10, 10, 80, 80)), (120, 120))
         results.append(check("Loose landmark geometry accepted", valid))
+        yaw_points = loose_points.copy()
+        yaw_points[30] = (25, 50)
+        pose = _pose_with_2d_yaw_fallback(yaw_points, np.asarray((10, 10, 80, 80)), (0.0, 160.0, 0.0))
+        results.append(check("2D yaw fallback corrects underestimated yaw", abs(pose[0]) > 20 and abs(pose[1]) < 1))
+        mouth_points = loose_points.copy()
+        mouth_points[[50, 51, 52, 61, 62, 63], 1] = 45
+        mouth_points[[55, 56, 57, 58, 59, 65, 66, 67], 1] = 48
+        mouth_points[57, 1] = 60
+        mouth_points[66, 1] = 60
+        adjusted = _stabilize_open_mouth_lower_lip(mouth_points, np.asarray((10, 10, 80, 80)))
+        results.append(check("Open-mouth lower lip constrained", adjusted[66, 1] >= 49.4))
+        jaw_points = loose_points.copy()
+        jaw_points[36:42] = (35, 35)
+        jaw_points[42:48] = (65, 35)
+        jaw_points[[27, 30, 33, 51, 57]] = (50, 55)
+        jaw_points[16] = (120, 70)
+        constrained = LandmarkSmoother()._constrain_jawline(jaw_points, np.asarray((10, 10, 80, 100)))
+        results.append(check("Jawline side drift constrained", constrained[16, 0] < 95))
     except Exception as exc:
         results.append(check("Smoothed LBF detector loads", False, str(exc)))
 
     dummy_bgr = np.zeros((20, 20, 3), dtype=np.uint8)
+    results.append(check("Video enhancement defaults off", not config.ENHANCE_VIDEO_FRAME))
+    config.ENHANCE_VIDEO_FRAME = True
+    enhanced, enhance_mode = enhance_frame_for_detection(dummy_bgr)
+    results.append(check("Optional display video enhancement", enhanced.shape == dummy_bgr.shape and "lowlight" in enhance_mode))
+    config.ENHANCE_VIDEO_FRAME = False
     gray, mode = to_gray(dummy_bgr, use_clahe=True, mode="clahe")
     results.append(check("CLAHE preprocessing", gray.shape == (20, 20) and mode == "clahe"))
     gray, mode = to_gray(dummy_bgr, mode="clahe-gamma")
     results.append(check("CLAHE gamma preprocessing", gray.shape == (20, 20) and mode == "clahe-gamma"))
+
+    run_module = importlib.import_module("run_face_landmarks")
+    detector = ImprovedFaceDetector()
+    landmark_detector = SmoothedLandmarkDetector()
+    changed = run_module._handle_runtime_key(ord("3"), detector, landmark_detector)
+    results.append(check("Runtime preprocess key switch", changed and config.PREPROCESS_MODE == "gamma"))
+    changed = run_module._handle_runtime_key(ord("v"), detector, landmark_detector)
+    results.append(check("Runtime video enhancement toggle", changed))
 
     if all(results):
         print("Beginner setup check: PASS")

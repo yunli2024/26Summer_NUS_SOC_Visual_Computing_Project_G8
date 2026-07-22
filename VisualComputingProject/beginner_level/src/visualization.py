@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import cv2
 
+try:
+    from . import config
+except ImportError:
+    import config
+
 
 FACE_COLOR = (0, 255, 0)
 FALLBACK_FACE_COLOR = (0, 220, 255)
@@ -27,7 +32,7 @@ def draw_faces(frame, faces, status: str, pose_labels=None) -> None:
     pose_labels = pose_labels or []
     for index, (x, y, w, h) in enumerate(faces):
         cv2.rectangle(frame, (int(x), int(y)), (int(x + w), int(y + h)), color, 2)
-        if index < len(pose_labels):
+        if config.SHOW_FACE_POSE_LABELS and index < len(pose_labels):
             cv2.putText(
                 frame,
                 pose_labels[index],
@@ -75,21 +80,28 @@ def draw_status(
     clahe_enabled: bool,
     failed_frames: int,
     message: str,
+    preprocess_name: str = "",
+    video_preprocess_name: str = "",
 ) -> None:
     face_size = "none" if selected_size is None else f"{selected_size[0]}x{selected_size[1]}"
+    preprocess_text = preprocess_name or ("clahe" if clahe_enabled else "gray")
     lines = [
         f"STATE: {status}",
         f"FPS: {fps:.1f}",
-        f"Candidates raw/kept: {raw_count}/{filtered_count}",
-        f"Face box size: {face_size}",
-        "Keypoints: 68 LBF points, colored by facial region",
-        f"CLAHE: {clahe_enabled}",
-        f"Failed frames: {failed_frames}",
-        message,
+        f"Faces: {filtered_count}/{raw_count}",
+        f"Box: {face_size}",
+        f"Mode: {preprocess_text}  video: {video_preprocess_name}",
+        f"Miss: {failed_frames}",
     ]
-    y = 25
     status_color = FACE_COLOR if status == "DETECTED" else FALLBACK_FACE_COLOR if status == "CACHED" else LOST_COLOR
+    panel_x, panel_y = 8, 8
+    panel_w = 290
+    panel_h = 22 + 22 * len(lines)
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (panel_x, panel_y), (panel_x + panel_w, panel_y + panel_h), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.42, frame, 0.58, 0, frame)
+    y = panel_y + 24
     for line in lines:
         color = status_color if line.startswith("STATE:") else TEXT_COLOR
-        cv2.putText(frame, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.58, color, 2, cv2.LINE_AA)
-        y += 26
+        cv2.putText(frame, line, (panel_x + 8, y), cv2.FONT_HERSHEY_SIMPLEX, 0.48, color, 1, cv2.LINE_AA)
+        y += 22

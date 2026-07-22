@@ -20,7 +20,7 @@ if str(CURRENT_DIR) not in sys.path:
 import config
 from face_detector import ImprovedFaceDetector
 from landmark_detector import SmoothedLandmarkDetector
-from preprocessing import PREPROCESS_MODES, to_gray
+from preprocessing import PREPROCESS_MODES, enhance_frame_for_detection, to_gray
 import visualization
 
 
@@ -73,7 +73,6 @@ def apply_runtime_config(args: argparse.Namespace) -> None:
 def main() -> int:
     args = parse_args()
     apply_runtime_config(args)
-    use_clahe = config.PREPROCESS_MODE == "clahe"
 
     try:
         face_detector = ImprovedFaceDetector()
@@ -93,8 +92,13 @@ def main() -> int:
                 break
             if config.UNMIRROR_CAMERA:
                 frame = cv2.flip(frame, 1)
+            detection_frame = frame
+            display_frame, video_preprocess_name = (
+                enhance_frame_for_detection(frame) if config.ENHANCE_VIDEO_FRAME else (frame.copy(), "off")
+            )
 
-            gray, preprocess_name = to_gray(frame, use_clahe, mode=config.PREPROCESS_MODE)
+            use_clahe = config.PREPROCESS_MODE in {"clahe", "clahe-gamma"}
+            gray, preprocess_name = to_gray(detection_frame, use_clahe, mode=config.PREPROCESS_MODE)
             detection = face_detector.detect(gray)
             landmark_ok, landmarks, message = landmark_detector.fit(
                 gray,
@@ -113,16 +117,16 @@ def main() -> int:
                     faces_to_draw = []
                     detection.status = "REJECTED"
 
-            visualization.draw_faces(frame, faces_to_draw, detection.status, pose_labels)
+            visualization.draw_faces(display_frame, faces_to_draw, detection.status, pose_labels)
             if landmark_ok:
-                visualization.draw_landmarks(frame, landmarks)
+                visualization.draw_landmarks(display_frame, landmarks)
 
             now = time.perf_counter()
             fps = 1.0 / max(now - last_time, 1e-6)
             last_time = now
 
             visualization.draw_status(
-                frame,
+                display_frame,
                 fps=fps,
                 status=detection.status,
                 raw_count=detection.raw_count,
@@ -130,15 +134,24 @@ def main() -> int:
                 selected_size=_selected_size(faces_to_draw, detection.selected_size),
                 clahe_enabled=use_clahe,
                 failed_frames=detection.failed_frames,
-                message=f"{message}; preprocess={preprocess_name}",
+                message=message,
+                preprocess_name=preprocess_name,
+                video_preprocess_name=video_preprocess_name,
             )
-            cv2.imshow(config.WINDOW_NAME, frame)
+            cv2.imshow(config.WINDOW_NAME, display_frame)
             if cv2.getWindowProperty(config.WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
                 print("Window closed by user.")
                 break
-            if cv2.waitKey(1) & 0xFF == ord(config.QUIT_KEY):
+
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord(config.QUIT_KEY):
                 print("Quit key pressed.")
                 break
+            if _handle_runtime_key(key, face_detector, landmark_detector):
+                print(
+                    f"Runtime mode: preprocess={config.PREPROCESS_MODE}, "
+                    f"video_enhance={config.ENHANCE_VIDEO_FRAME}, unmirror={config.UNMIRROR_CAMERA}"
+                )
     finally:
         cap.release()
         cv2.destroyAllWindows()
@@ -150,6 +163,32 @@ def _selected_size(faces, fallback):
         return fallback
     face = faces[0]
     return int(face[2]), int(face[3])
+
+
+def _handle_runtime_key(key: int, face_detector, landmark_detector) -> bool:
+    changed = False
+    mode_by_key = {
+        ord("1"): "raw",
+        ord("2"): "clahe",
+        ord("3"): "gamma",
+        ord("4"): "clahe-gamma",
+    }
+    if key in mode_by_key:
+        config.PREPROCESS_MODE = mode_by_key[key]
+        changed = True
+    elif key == ord("v"):
+        config.ENHANCE_VIDEO_FRAME = not config.ENHANCE_VIDEO_FRAME
+        changed = True
+    elif key == ord("m"):
+        config.UNMIRROR_CAMERA = not config.UNMIRROR_CAMERA
+        changed = True
+    elif key == ord("r"):
+        changed = True
+
+    if changed:
+        face_detector.reject_current_detection()
+        landmark_detector.reset()
+    return changed
 
 
 if __name__ == "__main__":

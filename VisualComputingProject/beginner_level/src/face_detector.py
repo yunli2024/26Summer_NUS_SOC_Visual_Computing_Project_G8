@@ -74,6 +74,7 @@ class ImprovedFaceDetector:
             raw_count += len(full_faces)
         faces = self._dedupe_faces(faces)
         faces = self._filter_faces(faces, gray_frame.shape)
+        faces = self._reject_nested_mouth_faces(faces)
         filtered_count = len(faces)
 
         if len(faces) > 0:
@@ -199,6 +200,16 @@ class ImprovedFaceDetector:
             selected.append(tuple(int(v) for v in candidate))
         return np.asarray(selected, dtype=np.int32)
 
+    def _reject_nested_mouth_faces(self, faces):
+        if len(faces) <= 1:
+            return faces
+        kept = []
+        for candidate in self._sort_faces(faces):
+            if any(_looks_like_mouth_false_face(candidate, parent) for parent in kept):
+                continue
+            kept.append(tuple(int(v) for v in candidate))
+        return np.asarray(kept, dtype=np.int32)
+
     def _detect_roi_faces(self, gray_frame):
         if not config.ROI_TRACKING_ENABLED or len(self.last_faces) == 0:
             return np.empty((0, 4), dtype=np.int32)
@@ -268,6 +279,21 @@ def _inside_ratio(inner, outer) -> float:
     inter = max(0, x2 - x1) * max(0, y2 - y1)
     inner_area = iw * ih
     return inter / inner_area if inner_area > 0 else 0.0
+
+
+def _looks_like_mouth_false_face(candidate, parent) -> bool:
+    cx, cy, cw, ch = [float(value) for value in candidate]
+    px, py, pw, ph = [float(value) for value in parent]
+    parent_area = pw * ph
+    candidate_area = cw * ch
+    if parent_area <= 0 or candidate_area <= 0:
+        return False
+    if candidate_area / parent_area > config.MOUTH_FALSE_FACE_AREA_RATIO:
+        return False
+    if _inside_ratio(candidate, parent) < config.MOUTH_FALSE_FACE_INSIDE_RATIO:
+        return False
+    center_y_ratio = ((cy + ch / 2.0) - py) / max(ph, 1.0)
+    return center_y_ratio >= config.MOUTH_FALSE_FACE_MIN_CENTER_Y
 
 
 def _expand_face_box(
