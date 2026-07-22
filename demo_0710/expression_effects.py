@@ -40,8 +40,9 @@ def draw_expression_label(frame_bgr: np.ndarray, prediction: ExpressionPredictio
     x, y, w, h = prediction.face.box
     text = f"{prediction.label} {prediction.confidence * 100:.0f}% ({prediction.prediction_ms:.2f} ms)"
     y_text = max(24, y - 10)
+    color = (210, 210, 210) if prediction.label == "uncertain" else (255, 255, 255)
     cv2.putText(frame_bgr, text, (x, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.68, (0, 0, 0), 4, cv2.LINE_AA)
-    cv2.putText(frame_bgr, text, (x, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.68, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(frame_bgr, text, (x, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.68, color, 1, cv2.LINE_AA)
 
 
 def apply_expression_effect(frame_bgr: np.ndarray, label: str, frame_index: int) -> None:

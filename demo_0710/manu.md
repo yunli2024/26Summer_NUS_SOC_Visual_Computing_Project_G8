@@ -1,4 +1,4 @@
-# Beginner Demo 操作手册
+﻿# Beginner Demo 操作手册
 
 ## 目标
 
@@ -9,14 +9,16 @@
 | 文件 | 作用 |
 |---|---|
 | `beginner_demo.py` | 主程序，打开摄像头并实时绘制 face box + 68 landmarks |
-| `face_pipeline.py` | 可复用模块：Haar/MediaPipe detector、LBF landmark、FPS、绘制函数 |
+| `face_pipeline.py` | 可复用模块：Haar/YuNet/MediaPipe detector、LBF landmark、FPS、绘制函数 |
 | `haarcascade_frontalface_default.xml` | OpenCV Haar face detector 模型 |
+| `face_detection_yunet_2023mar.onnx` | Expert 实时模式默认使用的 OpenCV YuNet 人脸检测模型 |
 | `lbfmodel.yaml` | OpenCV LBF 68-point facial landmark 模型 |
 | `requirements.txt` | Beginner + Expert 基础依赖 |
 | `robustness_notes.md` | 鲁棒性测试记录与汇报要点 |
 | `train_expert.py` | Expert 训练与评估脚本：从 FER zip 提取 landmarks 特征并训练分类器 |
 | `expert_demo.py` | Expert 实时 webcam 表情分类与 visual effects demo |
 | `expression_features.py` | landmark 归一化、几何特征和 Expert 特征提取 |
+| `realtime_stability.py` | Expert 实时模式稳定器：多人 track、误检过滤、表情概率平滑 |
 | `fer_dataset.py` | 从 `facial_expression_dataset.zip` 验证并读取 train/test 七类数据 |
 | `expression_effects.py` | 表情文字、置信度和实时视觉特效 |
 | `expert_report.md` | 当前 Expert 方法、评估结果、confusion matrix 和改进分析 |
@@ -48,20 +50,20 @@ conda --version
 如果是第一次运行本 demo，创建环境：
 
 ```powershell
-conda create -n sws3026-beginner python=3.10 -y
-conda activate sws3026-beginner
+conda create -n sws3026-face python=3.10 -y
+conda activate sws3026-face
 ```
 
 如果环境已经创建过，以后只需要：
 
 ```powershell
-conda activate sws3026-beginner
+conda activate sws3026-face
 cd D:\26spring_NUS_SOC_SWS\project\demo_0710
 ```
 
 ### Step 3：安装依赖
 
-在 `sws3026-beginner` 环境内执行：
+在 `sws3026-face` 环境内执行：
 
 ```powershell
 python -m pip install --upgrade pip
@@ -93,10 +95,11 @@ python -m pip install -r requirements.txt
 
 ```powershell
 Test-Path .\haarcascade_frontalface_default.xml
+Test-Path .\face_detection_yunet_2023mar.onnx
 Test-Path .\lbfmodel.yaml
 ```
 
-两行都应该输出 `True`。
+三行都应该输出 `True`。YuNet 模型来自 [OpenCV Zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)，无需额外训练。
 
 ### Step 6：运行 Beginner Demo
 
@@ -178,7 +181,7 @@ python beginner_demo.py --camera-index 1
 课程文档鼓励至少实验一个替代 detector。可选在同一个 Conda 环境中安装 MediaPipe：
 
 ```powershell
-conda activate sws3026-beginner
+conda activate sws3026-face
 cd D:\26spring_NUS_SOC_SWS\project\demo_0710
 python -m pip install mediapipe
 python beginner_demo.py --detector mediapipe --mirror
@@ -231,7 +234,7 @@ python beginner_demo.py --detector mediapipe --mirror
 说明还没有安装 OpenCV：
 
 ```powershell
-conda activate sws3026-beginner
+conda activate sws3026-face
 cd D:\26spring_NUS_SOC_SWS\project\demo_0710
 python -m pip install -r requirements.txt
 ```
@@ -241,7 +244,7 @@ python -m pip install -r requirements.txt
 说明安装的是普通 `opencv-python`，需要换成 contrib 版本：
 
 ```powershell
-conda activate sws3026-beginner
+conda activate sws3026-face
 python -m pip uninstall opencv-python opencv-contrib-python
 python -m pip install -r requirements.txt
 ```
@@ -281,7 +284,7 @@ True
 这一步用于确认 OpenCV、LBF、数据读取和训练流程都能跑通：
 
 ```powershell
-conda activate sws3026-beginner
+conda activate sws3026-face
 cd D:\26spring_NUS_SOC_SWS\project\demo_0710
 python train_expert.py --max-train-per-class 30 --max-test-per-class 10
 ```
@@ -349,10 +352,53 @@ Get-Content .\expert_report.md
 python expert_demo.py --mirror
 ```
 
-如果环境里出现误检，可以提高 Haar 严格程度：
+Expert 实时模式默认使用 YuNet，而训练特征提取流程仍保留原有 Haar + LBF。YuNet 使用学习到的人脸置信度和 NMS，在进入 LBF 前过滤背景大框；默认仍支持多人，最多处理 4 张脸：
 
 ```powershell
-python expert_demo.py --mirror --min-neighbors 6
+python expert_demo.py --mirror --max-faces 4
+```
+
+如果背景仍偶尔被识别为人脸，可只提高 YuNet 置信度，不限制人数：
+
+```powershell
+python expert_demo.py --mirror --max-faces 4 --yunet-score-threshold 0.85
+```
+
+如果远处或侧面真人漏检，可适当放宽到：
+
+```powershell
+python expert_demo.py --mirror --max-faces 4 --yunet-score-threshold 0.65 --min-face-size 45
+```
+
+实时模式已经加入以下稳定策略：
+
+- 多目标 face track：每张脸单独稳定，不把默认场景限制成单人。
+- YuNet 置信度 + NMS：默认 `--yunet-score-threshold 0.75`，直接验证候选区域是否具有真实人脸外观。
+- 缩放检测：默认 `--yunet-input-size 640`，检测后把坐标映射回原画面，兼顾精度和 CPU 实时性能。
+- 连续帧确认：默认 `--stable-frames 2`，新检测框需要连续出现才显示，减少一闪而过的“空气脸”。
+- 短暂 hold：真实人脸短暂漏检时保留上一帧稳定框，减少闪动。
+- landmark 合理性过滤：YuNet 路径只做宽松边界检查，避免严格几何规则误删侧脸；Haar 对照路径保留更完整的眼鼻嘴检查。
+- landmark EMA：每个 track 先以 `--landmark-smoothing 0.85` 平滑 68 个关键点，再重新计算分类特征，减少 LBF 逐帧坐标抖动。
+- 概率 EMA：默认 `--prob-smoothing 0.85`，每张脸独立平滑七类概率，多人之间互不污染。
+- 标签迟滞：第一个标签需要连续 6 帧确认；切换标签需要新类别连续领先 8 帧，并至少保持旧标签 30 帧。
+- 低置信度门控：默认要求置信度至少 `0.48`、领先第二名至少 `0.12`，否则保持当前标签或显示 `uncertain`。
+
+如果展示环境中仍然闪动，可使用更稳但响应稍慢的参数：
+
+```powershell
+python expert_demo.py --mirror --landmark-smoothing 0.90 --prob-smoothing 0.90 --switch-frames 10 --min-label-hold-frames 45
+```
+
+如果感觉真实表情切换响应太慢，可适度放宽为：
+
+```powershell
+python expert_demo.py --mirror --landmark-smoothing 0.75 --prob-smoothing 0.75 --switch-frames 4 --min-label-hold-frames 15
+```
+
+如果要和原有 Haar 方式对照，可运行：
+
+```powershell
+python expert_demo.py --mirror --detector haar --max-faces 4 --min-detection-weight 1.0
 ```
 
 运行后画面会显示：
@@ -393,7 +439,7 @@ python expert_demo.py --mirror --no-effects
 python expert_demo.py --mirror --benchmark-frames 30
 ```
 
-命令会默认先跑 3 帧 warmup，不计入平均值。输出中的 `avg_pipeline_ms` 是每帧 face detection + LBF landmarks + expression prediction 的平均耗时；`avg_prediction_ms_per_face` 是分类器本身的平均耗时。
+命令会默认先跑 3 帧 warmup，不计入平均值。输出中的 `raw_faces` 是当前 detector + LBF 的原始候选数，`faces` 是经过多人稳定器和误检过滤后的最终显示数；`avg_pipeline_ms` 是每帧 face detection + LBF landmarks + expression prediction 的平均耗时；`avg_prediction_ms_per_face` 是分类器本身的平均耗时；`label_switches` 是测量期间已确认标签发生变化的总次数，静止表情测试应尽量接近 `0`。
 
 ## 后续迭代接口
 

@@ -6,7 +6,7 @@ from typing import List, Optional, Sequence, Tuple
 import cv2
 import numpy as np
 
-from face_pipeline import Box, HaarFaceDetector, LbfLandmarkEstimator, box_area, limit_boxes_by_area
+from face_pipeline import Box, FaceDetector, LbfLandmarkEstimator, box_area, limit_boxes_by_area
 
 
 EMOTION_CLASSES = ("angry", "disgust", "fear", "happy", "neutral", "sad", "surprise")
@@ -93,7 +93,7 @@ def build_feature_vector(landmarks: np.ndarray, box: Box) -> np.ndarray:
 class ExpertFeatureExtractor:
     def __init__(
         self,
-        face_detector: HaarFaceDetector,
+        face_detector: FaceDetector,
         landmark_estimator: LbfLandmarkEstimator,
         *,
         max_faces: int = 1,
@@ -108,7 +108,7 @@ class ExpertFeatureExtractor:
         boxes = self._face_detector.detect(frame_bgr)
         boxes = [expand_box(box, frame_bgr.shape) for box in boxes]
         boxes = limit_boxes_by_area(boxes, self._max_faces)
-        source = "haar"
+        source = self._face_detector.name
 
         if not boxes and self._use_center_fallback:
             boxes = [centered_face_box(frame_bgr)]

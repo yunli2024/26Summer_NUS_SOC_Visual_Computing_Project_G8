@@ -1,0 +1,30 @@
+{
+  "video": "D:\\26spring_NUS_SOC_SWS\\project\\demo_0715\\dance_example_1.mp4",
+  "model": "D:\\26spring_NUS_SOC_SWS\\project\\demo_0715\\yolov8n-pose.pt",
+  "video_frames": 2682,
+  "video_fps": 30.0,
+  "video_size": [
+    1280,
+    720
+  ],
+  "processed_frames": 120,
+  "measured_frames": 117,
+  "warmup_frames": 3,
+  "start_frame": 1800,
+  "stride": 1,
+  "frames_with_person": 120,
+  "frames_with_multi_person": 117,
+  "person_detection_rate": 1.0,
+  "multi_person_rate": 0.975,
+  "avg_main_visible_keypoints": 16.825,
+  "avg_inference_ms": 67.47276083333418,
+  "measured_avg_main_visible_keypoints": 16.82051282051282,
+  "measured_avg_inference_ms": 47.52287692307673,
+  "measured_avg_draw_ms": 1.229919658122044,
+  "wall_fps": 13.871459496361203,
+  "sample_files": [
+    "sample_frame01803.jpg",
+    "sample_frame01842.jpg",
+    "sample_frame01881.jpg"
+  ]
+}

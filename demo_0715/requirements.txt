@@ -1,0 +1,4 @@
+numpy>=1.23
+opencv-python>=4.9,<5
+pillow>=10
+ultralytics>=8.0

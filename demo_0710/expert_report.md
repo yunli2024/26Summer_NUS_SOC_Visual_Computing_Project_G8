@@ -47,20 +47,23 @@ The prediction stage is far below the 30 ms real-time target. The heavier part o
 Command:
 
 ```powershell
-python expert_demo.py --mirror --benchmark-frames 30 --min-neighbors 4
+python expert_demo.py --mirror --benchmark-frames 60
 ```
 
 Measured after 3 warmup frames:
 
 | Metric | Value |
 |---|---:|
-| Measured frames | 30 |
-| Frames with detected face | 0 |
-| Predicted faces | 0 |
-| Average full pipeline time without detected face | 7.26 ms/frame |
+| Measured frames | 60 |
+| Frames with detected face | 60 |
+| Predicted faces | 60 |
+| Stable displayed label | `neutral` for frames 7-63 |
+| Confirmed label switches | 0 |
+| Average full pipeline time with one face | 21.59 ms/frame |
+| Average live classifier prediction time | 4.9031 ms/face |
 | Full test-set classifier prediction time | 3.2867 ms/sample |
 
-This satisfies the Expert real-time prediction target of less than 30 ms per prediction. In the latest benchmark the webcam view did not contain a Haar-detected face, so the benchmark mainly proves the camera and empty-frame path. Earlier face-positive runs measured the full detection + LBF + prediction path in the 14-19 ms/frame range; the current full-data classifier adds about 3.3 ms per face.
+This face-positive benchmark satisfies the Expert real-time prediction target of less than 30 ms per prediction. After the six-frame initial confirmation, the label remained `neutral` for the rest of the run instead of rapidly alternating. YuNet runs on a proportionally resized input whose longest side is 640 pixels, then maps boxes back to the display frame.
 
 ## Confusion Matrix
 
@@ -105,12 +108,61 @@ Run:
 python expert_demo.py --mirror
 ```
 
+## Real-Time Stability Update
+
+The webcam demo keeps multi-person support instead of limiting the scene to one
+face. The default remains `--max-faces 4`.
+
+Stability improvements:
+
+- multi-face tracking with one independent track per face;
+- YuNet is now the default real-time detector, using a `0.75` confidence threshold and built-in NMS before LBF fitting;
+- YuNet candidates use broad landmark boundary checks, while the optional Haar path keeps stricter geometry checks;
+- new faces must remain stable for consecutive frames before being shown;
+- short missed detections reuse the last stable face to reduce box flicker;
+- each face track applies EMA smoothing to all 68 landmarks before rebuilding the classifier feature vector;
+- each face has its own probability EMA and label state, so multiple faces do not share temporal history;
+- the initial label requires six consecutive eligible frames;
+- a new label must lead for eight consecutive frames and the current label must be held for at least 30 frames;
+- low-confidence expression output can stay `uncertain` instead of forcing an
+  incorrect class/effect.
+
+Default temporal parameters are `--landmark-smoothing 0.85`,
+`--prob-smoothing 0.85`, `--min-confidence 0.48`,
+`--switch-margin 0.12`, `--initial-label-frames 6`,
+`--switch-frames 8`, and `--min-label-hold-frames 30`.
+
+Verification:
+
+```powershell
+python test_realtime_stability.py
+```
+
+Expected output:
+
+```text
+realtime_stability_tests_ok
+```
+
+The benchmark mode prints both `raw_faces` and final `faces`; this helps verify
+how many detector/LBF candidates are filtered by the real-time stabilizer. This
+is not a single-person workaround: `--max-faces 4` remains the default and each
+face receives an independent track.
+
+Regression checks:
+
+- On the reported false-positive screenshot, the complete YuNet + LBF + tracker pipeline produced exactly one stable face instead of a nested background box.
+- On a fixed 70-image FER test sample, YuNet detected 69 faces at the default threshold; the previous Haar settings detected 35. This is a detector recall check, not an expression-classification metric.
+- `test_realtime_stability.py` also checks multi-face tracking, landmark jitter attenuation, rejection of a room-like non-face background, suppression of alternating expression labels, and a valid confirmed label switch.
+
+The bundled 2023 YuNet ONNX model is from [OpenCV Zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) and does not require project-specific retraining.
+
 ## Improvement Strategy
 
 Good next steps:
 
-1. Add temporal smoothing for expression labels over a longer window in webcam mode.
+1. Real-time mode now uses YuNet, multi-face tracking, landmark EMA, short hold, probability EMA, and confirmed label transitions.
 2. Add more geometry features, especially mouth aspect ratio, eyebrow angle, and eye-mouth relative distances.
-3. Compare Haar with MediaPipe or another modern detector for more stable face boxes before LBF.
-4. Try a lightweight model on landmark-rendered images rather than raw face images; this still uses keypoints as input.
+3. Evaluate YuNet thresholds on recorded team-member webcam clips covering distance, pose, lighting, and multi-person scenes.
+4. Compare the current RBF SVM with a lightweight Landmark Transformer that treats the 68 keypoints as tokens; this keeps the required keypoints-only input while targeting the current `0.4198` macro F1 ceiling.
 5. Use class-specific tuning for visually similar classes such as `fear`, `sad`, and `angry`.

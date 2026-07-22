@@ -1,0 +1,16 @@
+{
+  "video": "D:\\26spring_NUS_SOC_SWS\\project\\demo_0715\\dance_example_1.mp4",
+  "model": "D:\\26spring_NUS_SOC_SWS\\project\\demo_0715\\yolov8n-pose.pt",
+  "ref_start": 900,
+  "simulated_user_lag": 0,
+  "lag_window": 0,
+  "processed_pairs": 60,
+  "valid_scored_pairs": 60,
+  "avg_score_after_lag": 99.99999999999999,
+  "lag_hit_rate_after_lag": 1.0,
+  "pair_fps": 5.6145886927310045,
+  "sample_files": [
+    "task2_sim_frame0003.jpg",
+    "task2_sim_frame0031.jpg"
+  ]
+}

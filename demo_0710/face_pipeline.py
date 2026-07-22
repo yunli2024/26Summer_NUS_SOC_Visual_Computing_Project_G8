@@ -3,13 +3,20 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Protocol, Sequence, Tuple
 
 import cv2
 import numpy as np
 
 
 Box = Tuple[int, int, int, int]
+
+
+class FaceDetector(Protocol):
+    name: str
+
+    def detect(self, frame_bgr: np.ndarray) -> List[Box]:
+        ...
 
 
 @dataclass(frozen=True)
@@ -52,6 +59,8 @@ def preprocess_gray(gray: np.ndarray, mode: str) -> np.ndarray:
 
 
 class HaarFaceDetector:
+    name = "haar"
+
     def __init__(
         self,
         cascade_path: Path,
@@ -60,6 +69,7 @@ class HaarFaceDetector:
         min_face_size: int = 60,
         preprocess: str = "clahe",
         overlap_threshold: float = 0.55,
+        min_detection_weight: float = 0.0,
     ) -> None:
         require_file(cascade_path, "Haar cascade")
         self._classifier = cv2.CascadeClassifier(str(cascade_path))
@@ -70,10 +80,27 @@ class HaarFaceDetector:
         self._min_face_size = min_face_size
         self._preprocess = preprocess
         self._overlap_threshold = overlap_threshold
+        self._min_detection_weight = min_detection_weight
 
     def detect(self, frame_bgr: np.ndarray) -> List[Box]:
         gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
         gray = preprocess_gray(gray, self._preprocess)
+        if self._min_detection_weight > 0 and hasattr(self._classifier, "detectMultiScale3"):
+            boxes, _reject_levels, level_weights = self._classifier.detectMultiScale3(
+                gray,
+                scaleFactor=self._scale_factor,
+                minNeighbors=self._min_neighbors,
+                minSize=(self._min_face_size, self._min_face_size),
+                flags=cv2.CASCADE_SCALE_IMAGE,
+                outputRejectLevels=True,
+            )
+            filtered = [
+                tuple(map(int, box))
+                for box, weight in zip(boxes, level_weights)
+                if float(weight) >= self._min_detection_weight
+            ]
+            return suppress_overlapping_boxes(filtered, self._overlap_threshold)
+
         boxes = self._classifier.detectMultiScale(
             gray,
             scaleFactor=self._scale_factor,
@@ -84,7 +111,73 @@ class HaarFaceDetector:
         return suppress_overlapping_boxes([tuple(map(int, box)) for box in boxes], self._overlap_threshold)
 
 
+class YuNetFaceDetector:
+    name = "yunet"
+
+    def __init__(
+        self,
+        model_path: Path,
+        *,
+        score_threshold: float = 0.75,
+        nms_threshold: float = 0.30,
+        top_k: int = 5000,
+        min_face_size: int = 60,
+        max_input_size: int = 640,
+    ) -> None:
+        require_file(model_path, "YuNet face detector model")
+        if not hasattr(cv2, "FaceDetectorYN_create"):
+            raise RuntimeError("YuNet requires OpenCV with cv2.FaceDetectorYN_create support.")
+        self._detector = cv2.FaceDetectorYN_create(
+            str(model_path),
+            "",
+            (320, 320),
+            score_threshold,
+            nms_threshold,
+            top_k,
+        )
+        self._min_face_size = max(1, min_face_size)
+        self._max_input_size = max(0, max_input_size)
+        self._input_size: Optional[Tuple[int, int]] = None
+
+    def detect(self, frame_bgr: np.ndarray) -> List[Box]:
+        height, width = frame_bgr.shape[:2]
+        longest_side = max(width, height)
+        scale = 1.0
+        if self._max_input_size > 0 and longest_side > self._max_input_size:
+            scale = self._max_input_size / float(longest_side)
+        if scale < 1.0:
+            inference_frame = cv2.resize(
+                frame_bgr,
+                (max(1, int(round(width * scale))), max(1, int(round(height * scale)))),
+                interpolation=cv2.INTER_AREA,
+            )
+        else:
+            inference_frame = frame_bgr
+
+        input_size = (inference_frame.shape[1], inference_frame.shape[0])
+        if input_size != self._input_size:
+            self._detector.setInputSize(input_size)
+            self._input_size = input_size
+
+        _status, detections = self._detector.detect(inference_frame)
+        if detections is None:
+            return []
+
+        boxes: List[Box] = []
+        for detection in detections:
+            x, y, w, h = (int(round(float(value) / scale)) for value in detection[:4])
+            x = max(0, x)
+            y = max(0, y)
+            w = min(width - x, w)
+            h = min(height - y, h)
+            if w >= self._min_face_size and h >= self._min_face_size:
+                boxes.append((x, y, w, h))
+        return boxes
+
+
 class MediaPipeFaceDetector:
+    name = "mediapipe"
+
     def __init__(self, min_detection_confidence: float = 0.5) -> None:
         try:
             import mediapipe as mp
