@@ -153,6 +153,10 @@ English: To solve the issue where on-screen text blocked the face, the HUD has b
 
 English: To address the problem where low-light video enhancement made normal face detection unstable, the enhancement pipeline has been changed. Previously, the enhanced frame was passed directly into Haar and LBF detection; gamma, CLAHE, and sharpening could amplify noise and glasses reflections in normal backlit scenes, making face boxes and keypoints less stable. `ENHANCE_VIDEO_FRAME` is now off by default. Even when manually enabled with `v`, it only affects the displayed preview and no longer changes the original frame used for detection and landmark fitting. The recognition pipeline continues to use stable grayscale/CLAHE preprocessing.
 
+中文：针对向右转头时容易把五官局部识别成小人脸的问题，新增了 sudden-shrink track rejection。系统会把当前候选框与上一帧稳定人脸框比较：如果候选框面积突然变得明显更小、中心仍落在上一帧人脸附近，并且有一定比例位于上一帧脸框内部，就认为它更可能是鼻子/嘴巴/眼睛区域的局部误检，而不是真实新脸。此时程序会拒绝这个小框，并短暂回退到上一帧稳定人脸框，避免右转时出现 `96x96` 之类的小框和错误 keypoints。
+
+English: To fix the issue where right head turns could make the detector treat facial features as a small face, sudden-shrink track rejection has been added. The system compares the current candidate with the previous stable face box: if the candidate suddenly becomes much smaller, its center is still near the previous face, and part of it lies inside the previous box, it is treated as a local nose/mouth/eye false positive rather than a real new face. The small box is rejected and the demo briefly falls back to the previous stable face box, preventing `96x96`-style boxes and incorrect keypoints during right turns.
+
 ## Optimizations Already Made / 已经完成的优化
 
 中文：第一，针对人脸框刷新过快和不稳定的问题，改进版加入了短时缓存机制。当当前帧检测失败时，程序会在少量帧内继续显示上一帧的人脸框，避免人脸框立刻消失造成闪烁。

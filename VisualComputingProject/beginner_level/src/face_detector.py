@@ -163,14 +163,7 @@ class ImprovedFaceDetector:
     def _looks_like_inner_false_positive(self, face) -> bool:
         if len(self.last_faces) == 0:
             return False
-        last = self.last_faces[0]
-        old_area = last[2] * last[3]
-        new_area = face[2] * face[3]
-        if old_area <= 0:
-            return False
-        if new_area / old_area >= config.SUDDEN_SHRINK_AREA_RATIO:
-            return False
-        return _inside_ratio(face, last) >= config.INNER_FALSE_POSITIVE_IOU
+        return any(_looks_like_shrunken_track_false_face(face, last) for last in self.last_faces)
 
     def _filter_faces(self, faces, original_shape):
         if len(faces) == 0:
@@ -294,6 +287,38 @@ def _looks_like_mouth_false_face(candidate, parent) -> bool:
         return False
     center_y_ratio = ((cy + ch / 2.0) - py) / max(ph, 1.0)
     return center_y_ratio >= config.MOUTH_FALSE_FACE_MIN_CENTER_Y
+
+
+def _looks_like_shrunken_track_false_face(candidate, previous) -> bool:
+    cx, cy, cw, ch = [float(value) for value in candidate]
+    px, py, pw, ph = [float(value) for value in previous]
+    previous_area = pw * ph
+    candidate_area = cw * ch
+    if previous_area <= 0 or candidate_area <= 0:
+        return False
+    area_ratio = candidate_area / previous_area
+    if area_ratio >= config.SUDDEN_SHRINK_TRACK_AREA_RATIO:
+        return False
+
+    candidate_center_x = cx + cw / 2.0
+    candidate_center_y = cy + ch / 2.0
+    margin_x = pw * config.SUDDEN_SHRINK_TRACK_CENTER_MARGIN
+    margin_y = ph * config.SUDDEN_SHRINK_TRACK_CENTER_MARGIN
+    center_near_previous = (
+        px - margin_x <= candidate_center_x <= px + pw + margin_x
+        and py - margin_y <= candidate_center_y <= py + ph + margin_y
+    )
+    if not center_near_previous:
+        return False
+
+    inside_ratio = _inside_ratio(candidate, previous)
+    if inside_ratio >= config.SUDDEN_SHRINK_TRACK_MIN_INSIDE_RATIO:
+        return True
+
+    previous_center = np.asarray([px + pw / 2.0, py + ph / 2.0], dtype=np.float32)
+    candidate_center = np.asarray([candidate_center_x, candidate_center_y], dtype=np.float32)
+    center_shift = float(np.linalg.norm(candidate_center - previous_center)) / max(pw, ph, 1.0)
+    return center_shift <= config.SUDDEN_SHRINK_TRACK_CENTER_MARGIN
 
 
 def _expand_face_box(
