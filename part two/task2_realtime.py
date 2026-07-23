@@ -24,7 +24,7 @@ from starter import FaceLandmarkDetector, LandmarkSmoother, open_camera  # noqa:
 
 
 WINDOW_NAME = "Real-time Expression Effects"
-DEFAULT_MODEL = BASE_DIR / "artifacts" / "expression_classifier.joblib"
+DEFAULT_MODEL = BASE_DIR / "artifacts_svm_geometry" / "expression_classifier.joblib"
 EXPRESSION_COLORS = {
     "angry": (40, 60, 255),
     "disgust": (70, 200, 80),

@@ -99,4 +99,22 @@ Controls:
 
 On a CPU-only machine, webcam pose inference is expected to update more slowly than the 10 FPS reference video. The reference playback remains clock-synchronized and the temporal matcher scores every newly available camera pose. If necessary, use `--image-size 320` for faster but slightly less precise detection.
 
+### Scoring A/B tester
+
+`scoring_video_tester.py` plays the same cached video on both sides, so lag and
+mirror handling can be tested without a camera or additional YOLO inference.
+The simulated-player panel can be delayed or mirrored independently of the
+scorer's allowed reaction lag and mirror acceptance:
+
+```powershell
+python scoring_video_tester.py
+```
+
+Use the two sliders and two checkboxes for live A/B comparisons. A deterministic
+headless validation is also available:
+
+```powershell
+python scoring_video_tester.py --check
+```
+
 See `TASK2_REPORT.md` for the scoring formula, temporal alignment design, test results, and limitations.

@@ -19,6 +19,46 @@ from starter import FaceLandmarkDetector  # noqa: E402
 
 CLASS_NAMES = ("angry", "disgust", "fear", "happy", "neutral", "sad", "surprise")
 FEATURE_VERSION = "lbf68_eye_aligned_v1"
+GEOMETRY_FEATURE_NAMES = (
+    "inner_brow_distance",
+    "left_brow_eye_gap",
+    "right_brow_eye_gap",
+    "mean_brow_eye_gap",
+    "brow_eye_gap_asymmetry",
+    "left_brow_slope",
+    "right_brow_slope",
+    "brow_slope_asymmetry",
+    "left_eye_width",
+    "right_eye_width",
+    "left_eye_height",
+    "right_eye_height",
+    "left_eye_aspect_ratio",
+    "right_eye_aspect_ratio",
+    "mean_eye_aspect_ratio",
+    "eye_aspect_asymmetry",
+    "left_eye_area_ratio",
+    "right_eye_area_ratio",
+    "nose_width",
+    "nose_to_upper_lip",
+    "nose_to_mouth_center",
+    "mouth_width",
+    "outer_mouth_height",
+    "inner_mouth_height",
+    "outer_mouth_aspect_ratio",
+    "inner_mouth_aspect_ratio",
+    "mouth_corner_angle",
+    "smile_curvature",
+    "left_corner_lift",
+    "right_corner_lift",
+    "mouth_corner_asymmetry",
+    "upper_lip_thickness",
+    "lower_lip_thickness",
+    "lip_thickness_ratio",
+    "mouth_to_chin_ratio",
+    "mouth_center_x",
+    "eye_to_mouth_distance",
+    "cheek_distance_asymmetry",
+)
 
 
 def read_grayscale(path: Path) -> np.ndarray:
@@ -50,6 +90,141 @@ def normalize_landmarks(landmarks: np.ndarray) -> np.ndarray:
     aligned = (points - eye_center) @ rotation.T
     aligned /= eye_distance
     return aligned.reshape(-1).astype(np.float32)
+
+
+def landmark_geometry_features(features: np.ndarray) -> np.ndarray:
+    """Derive expression-focused distances, ratios, angles, and asymmetries.
+
+    The input must contain eye-aligned, inter-eye-normalized LBF coordinates.
+    A batch produces ``(n, len(GEOMETRY_FEATURE_NAMES))`` and a single feature
+    vector produces one row with the same two-dimensional shape.
+    """
+    rows = np.asarray(features, dtype=np.float32)
+    if rows.ndim == 1:
+        rows = rows.reshape(1, -1)
+    if rows.ndim != 2 or rows.shape[1] != 136:
+        raise ValueError("Expected normalized landmark features with shape (n, 136).")
+    if not np.isfinite(rows).all():
+        raise ValueError("Landmark features must be finite.")
+
+    points = rows.reshape(-1, 68, 2)
+    epsilon = np.float32(1e-6)
+
+    def distance(first: int, second: int) -> np.ndarray:
+        return np.linalg.norm(points[:, first] - points[:, second], axis=1)
+
+    def ratio(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:
+        return numerator / np.maximum(denominator, epsilon)
+
+    def polygon_area(indices: tuple[int, ...]) -> np.ndarray:
+        polygon = points[:, indices]
+        x = polygon[:, :, 0]
+        y = polygon[:, :, 1]
+        return 0.5 * np.abs(
+            np.sum(x * np.roll(y, -1, axis=1) - y * np.roll(x, -1, axis=1), axis=1)
+        )
+
+    left_eye_center = points[:, 36:42].mean(axis=1)
+    right_eye_center = points[:, 42:48].mean(axis=1)
+    eye_center = 0.5 * (left_eye_center + right_eye_center)
+    left_brow_center = points[:, 17:22].mean(axis=1)
+    right_brow_center = points[:, 22:27].mean(axis=1)
+
+    left_brow_gap = left_eye_center[:, 1] - left_brow_center[:, 1]
+    right_brow_gap = right_eye_center[:, 1] - right_brow_center[:, 1]
+    left_brow_vector = points[:, 21] - points[:, 17]
+    right_brow_vector = points[:, 26] - points[:, 22]
+    left_brow_slope = np.arctan2(left_brow_vector[:, 1], left_brow_vector[:, 0])
+    right_brow_slope = np.arctan2(right_brow_vector[:, 1], right_brow_vector[:, 0])
+
+    left_eye_width = distance(36, 39)
+    right_eye_width = distance(42, 45)
+    left_eye_height_sum = distance(37, 41) + distance(38, 40)
+    right_eye_height_sum = distance(43, 47) + distance(44, 46)
+    left_eye_height = 0.5 * left_eye_height_sum
+    right_eye_height = 0.5 * right_eye_height_sum
+    left_eye_aspect = ratio(left_eye_height_sum, 2.0 * left_eye_width)
+    right_eye_aspect = ratio(right_eye_height_sum, 2.0 * right_eye_width)
+
+    mouth_center = points[:, 48:60].mean(axis=1)
+    mouth_width = distance(48, 54)
+    outer_mouth_height = (
+        distance(50, 58) + distance(51, 57) + distance(52, 56)
+    ) / 3.0
+    inner_mouth_height = (
+        distance(61, 67) + distance(62, 66) + distance(63, 65)
+    ) / 3.0
+    corner_mean_y = 0.5 * (points[:, 48, 1] + points[:, 54, 1])
+    left_corner_lift = ratio(mouth_center[:, 1] - points[:, 48, 1], mouth_width)
+    right_corner_lift = ratio(mouth_center[:, 1] - points[:, 54, 1], mouth_width)
+    mouth_corner_vector = points[:, 54] - points[:, 48]
+    mouth_corner_angle = np.arctan2(
+        mouth_corner_vector[:, 1],
+        mouth_corner_vector[:, 0],
+    )
+    upper_lip_thickness = distance(51, 62)
+    lower_lip_thickness = distance(57, 66)
+    face_height = distance(27, 8)
+
+    geometry = np.column_stack(
+        (
+            distance(21, 22),
+            left_brow_gap,
+            right_brow_gap,
+            0.5 * (left_brow_gap + right_brow_gap),
+            np.abs(left_brow_gap - right_brow_gap),
+            left_brow_slope,
+            right_brow_slope,
+            np.abs(left_brow_slope + right_brow_slope),
+            left_eye_width,
+            right_eye_width,
+            left_eye_height,
+            right_eye_height,
+            left_eye_aspect,
+            right_eye_aspect,
+            0.5 * (left_eye_aspect + right_eye_aspect),
+            np.abs(left_eye_aspect - right_eye_aspect),
+            ratio(polygon_area((36, 37, 38, 39, 40, 41)), left_eye_width**2),
+            ratio(polygon_area((42, 43, 44, 45, 46, 47)), right_eye_width**2),
+            distance(31, 35),
+            distance(33, 51),
+            np.linalg.norm(points[:, 33] - mouth_center, axis=1),
+            mouth_width,
+            outer_mouth_height,
+            inner_mouth_height,
+            ratio(outer_mouth_height, mouth_width),
+            ratio(inner_mouth_height, mouth_width),
+            mouth_corner_angle,
+            ratio(mouth_center[:, 1] - corner_mean_y, mouth_width),
+            left_corner_lift,
+            right_corner_lift,
+            ratio(points[:, 48, 1] - points[:, 54, 1], mouth_width),
+            upper_lip_thickness,
+            lower_lip_thickness,
+            ratio(upper_lip_thickness, lower_lip_thickness),
+            ratio(distance(57, 8), face_height),
+            mouth_center[:, 0],
+            np.linalg.norm(mouth_center - eye_center, axis=1),
+            ratio(
+                np.abs(distance(36, 48) - distance(45, 54)),
+                distance(36, 45),
+            ),
+        )
+    ).astype(np.float32)
+    if geometry.shape[1] != len(GEOMETRY_FEATURE_NAMES):
+        raise RuntimeError("Geometry feature names and values are out of sync.")
+    if not np.isfinite(geometry).all():
+        raise ValueError("Geometry feature extraction produced invalid values.")
+    return geometry
+
+
+def append_landmark_geometry(features: np.ndarray) -> np.ndarray:
+    """Append explicit geometry descriptors to the 136 normalized coordinates."""
+    rows = np.asarray(features, dtype=np.float32)
+    if rows.ndim == 1:
+        rows = rows.reshape(1, -1)
+    geometry = landmark_geometry_features(rows)
+    return np.concatenate((rows, geometry), axis=1).astype(np.float32)
 
 
 class ExpressionFeatureExtractor:

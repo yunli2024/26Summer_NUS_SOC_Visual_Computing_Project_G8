@@ -202,6 +202,7 @@ def save_failure_cases(
 def train_and_evaluate(args: argparse.Namespace, feature_path: Path) -> None:
     import joblib
     import sklearn
+    from sklearn.decomposition import PCA
     from sklearn.metrics import accuracy_score, classification_report, f1_score
     from sklearn.ensemble import HistGradientBoostingClassifier
     from sklearn.pipeline import Pipeline
@@ -223,23 +224,29 @@ def train_and_evaluate(args: argparse.Namespace, feature_path: Path) -> None:
         flush=True,
     )
     if args.classifier == "svm":
-        classifier = Pipeline(
-            [
-                ("scaler", StandardScaler()),
+        svm_steps = [("scaler", StandardScaler())]
+        if args.pca_variance > 0.0:
+            svm_steps.append(
                 (
-                    "svm",
-                    SVC(
-                        C=args.svm_c,
-                        kernel="rbf",
-                        gamma="scale",
-                        class_weight="balanced",
-                        cache_size=args.svm_cache_mb,
-                        decision_function_shape="ovr",
-                        random_state=args.seed,
-                    ),
+                    "pca",
+                    PCA(n_components=args.pca_variance, svd_solver="full"),
+                )
+            )
+        svm_steps.append(
+            (
+                "svm",
+                SVC(
+                    C=args.svm_c,
+                    kernel="rbf",
+                    gamma="scale",
+                    class_weight="balanced",
+                    cache_size=args.svm_cache_mb,
+                    decision_function_shape="ovr",
+                    random_state=args.seed,
                 ),
-            ]
+            )
         )
+        classifier = Pipeline(svm_steps)
     else:
         classifier = HistGradientBoostingClassifier(
             learning_rate=args.hgb_learning_rate,
@@ -280,6 +287,11 @@ def train_and_evaluate(args: argparse.Namespace, feature_path: Path) -> None:
         digits=4,
         zero_division=0,
     )
+    pca_model = (
+        classifier.named_steps.get("pca")
+        if isinstance(classifier, Pipeline)
+        else None
+    )
     metrics = {
         "accuracy": float(accuracy_score(test_y, predictions)),
         "macro_f1": float(f1_score(test_y, predictions, average="macro")),
@@ -293,6 +305,13 @@ def train_and_evaluate(args: argparse.Namespace, feature_path: Path) -> None:
         "feature_count": int(train_X.shape[1]),
         "classifier": args.classifier,
         "svm_c": args.svm_c,
+        "pca_variance_target": args.pca_variance if pca_model is not None else None,
+        "pca_components": int(pca_model.n_components_) if pca_model is not None else None,
+        "pca_explained_variance": (
+            float(np.sum(pca_model.explained_variance_ratio_))
+            if pca_model is not None
+            else None
+        ),
         "versions": {
             "python": platform.python_version(),
             "opencv": cv2.__version__,
@@ -349,6 +368,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--classifier", choices=("hgb", "svm"), default="hgb")
     parser.add_argument("--svm-c", type=float, default=10.0)
     parser.add_argument("--svm-cache-mb", type=float, default=2048.0)
+    parser.add_argument(
+        "--pca-variance",
+        type=float,
+        default=0.0,
+        help="SVM PCA variance to retain (0 disables PCA; otherwise between 0 and 1)",
+    )
     parser.add_argument("--hgb-iterations", type=int, default=250)
     parser.add_argument("--hgb-learning-rate", type=float, default=0.08)
     parser.add_argument("--hgb-max-leaf-nodes", type=int, default=31)
@@ -359,6 +384,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
+        if args.pca_variance < 0.0 or args.pca_variance >= 1.0:
+            raise ValueError("--pca-variance must be 0 or a value between 0 and 1.")
+        if args.classifier != "svm" and args.pca_variance > 0.0:
+            raise ValueError("--pca-variance is only supported with --classifier svm.")
         feature_path = args.features or (args.output / "fer_landmark_features.npz")
         if args.stage in {"all", "extract"}:
             feature_path = extract_features(args)
