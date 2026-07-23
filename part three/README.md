@@ -131,4 +131,7 @@ headless validation is also available:
 python scoring_video_tester.py --check
 ```
 
-See `TASK2_REPORT.md` for the scoring formula, temporal alignment design, test results, and limitations.
+See `TASK2_REPORT.md` for the concise Task 2 summary. The Chinese
+`LEVEL3_DANCE_SCORING_DETAILED_REPORT.md` contains the full formulas,
+normalization, motion/anti-static score, delay and mirror design, HOLD
+hysteresis, runtime optimizations, verification evidence, and defense Q&A.

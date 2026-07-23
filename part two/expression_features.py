@@ -59,6 +59,13 @@ GEOMETRY_FEATURE_NAMES = (
     "eye_to_mouth_distance",
     "cheek_distance_asymmetry",
 )
+GEOMETRY_FEATURE_GROUPS = {
+    "brow": GEOMETRY_FEATURE_NAMES[0:8],
+    "eyes": GEOMETRY_FEATURE_NAMES[8:18],
+    "nose": GEOMETRY_FEATURE_NAMES[18:21],
+    "mouth": GEOMETRY_FEATURE_NAMES[21:34],
+    "global": GEOMETRY_FEATURE_NAMES[34:38],
+}
 
 
 def read_grayscale(path: Path) -> np.ndarray:
@@ -225,6 +232,37 @@ def append_landmark_geometry(features: np.ndarray) -> np.ndarray:
         rows = rows.reshape(1, -1)
     geometry = landmark_geometry_features(rows)
     return np.concatenate((rows, geometry), axis=1).astype(np.float32)
+
+
+def append_landmark_geometry_groups(
+    features: np.ndarray,
+    groups: tuple[str, ...],
+) -> np.ndarray:
+    """Append only the requested named groups of landmark geometry features."""
+    rows = np.asarray(features, dtype=np.float32)
+    if rows.ndim == 1:
+        rows = rows.reshape(1, -1)
+    unknown = sorted(set(groups).difference(GEOMETRY_FEATURE_GROUPS))
+    if unknown:
+        raise ValueError(f"Unknown geometry feature groups: {', '.join(unknown)}")
+    if len(set(groups)) != len(groups):
+        raise ValueError("Geometry feature groups must not be repeated.")
+    if not groups:
+        return rows.copy()
+
+    geometry = landmark_geometry_features(rows)
+    name_to_index = {
+        name: index for index, name in enumerate(GEOMETRY_FEATURE_NAMES)
+    }
+    selected_names = [
+        name
+        for group in groups
+        for name in GEOMETRY_FEATURE_GROUPS[group]
+    ]
+    selected_indices = [name_to_index[name] for name in selected_names]
+    return np.concatenate((rows, geometry[:, selected_indices]), axis=1).astype(
+        np.float32
+    )
 
 
 class ExpressionFeatureExtractor:
