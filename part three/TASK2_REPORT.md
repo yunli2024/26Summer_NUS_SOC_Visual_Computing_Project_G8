@@ -63,6 +63,15 @@ When the reference genuinely holds a pose, motion is not required and pose
 quality remains valid. If mirror acceptance is enabled, both the direct pose
 and an anatomically left/right-swapped horizontal mirror are tested.
 
+Reference-hold detection is stabilized separately from the raw motion score.
+The reference activity is smoothed with an exponential moving average
+(`alpha=0.35`). The game enters `HOLD` only after two consecutive scoring
+samples fall below `0.07`, and it leaves `HOLD` only after the smoothed activity
+reaches `0.10`. This two-threshold hysteresis prevents a short slowdown or
+keypoint fluctuation near the boundary from making `HOLD` flicker while the
+reference dancer is still moving. The filter resets on start/restart, pause,
+stop, or loss of the player pose.
+
 ## Temporal alignment
 
 People naturally react after the reference dancer moves. At every new webcam
@@ -89,7 +98,8 @@ PERFECT. One potential score event is evaluated for each newly completed
 webcam inference rather than for each GUI refresh.
 
 The live overlay displays the final similarity, inference time, selected lag,
-mirror state, motion similarity, and player/reference activity values.
+mirror state, motion similarity, raw player/reference activity, and the
+smoothed reference activity (`ref~`).
 
 ## Verification results
 
@@ -97,7 +107,7 @@ The included reference output contains 300 annotated frames and 300 cached
 pose records at 10 FPS, giving a 30-second round. All 300 processed frames
 contained a primary dancer.
 
-Eight deterministic scoring tests pass:
+Ten deterministic scoring tests pass:
 
 1. Identical poses score approximately 100.
 2. Translation and uniform scaling do not reduce the score.
@@ -107,6 +117,9 @@ Eight deterministic scoring tests pass:
 6. Matching reference/player motion scores approximately 100.
 7. A static player is penalized while the reference is moving.
 8. A genuine static hold is not penalized.
+9. One isolated low-motion sample does not trigger `HOLD`.
+10. Confirmed `HOLD` remains active inside the hysteresis band and exits only
+    above the release threshold.
 
 The side-by-side tester also confirms that a correctly matched player delayed
 by 0.8 seconds retains a score of 100.00, including mirrored playback.

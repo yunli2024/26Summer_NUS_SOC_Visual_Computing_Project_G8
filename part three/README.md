@@ -72,6 +72,11 @@ reaction delay, and can accept mirrored moves. Reference hold frames display
 `HOLD` without awarding points; standing still while the reference moves
 displays `MOVE!`.
 
+To prevent `HOLD` from flashing during a slow but continuous reference action,
+reference activity is EMA-smoothed (`alpha=0.35`). `HOLD` requires two
+consecutive samples below `0.07` and remains active until the smoothed activity
+reaches `0.10`. The live diagnostic suffix `ref~` shows this smoothed value.
+
 First generate the 30-second reference clip and cache (the included output has already been generated):
 
 ```powershell

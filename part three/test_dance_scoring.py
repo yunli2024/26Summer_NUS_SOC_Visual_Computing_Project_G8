@@ -4,7 +4,12 @@ import unittest
 
 import numpy as np
 
-from dance_scoring import best_reference_match, mirror_pose, pose_similarity
+from dance_scoring import (
+    HoldStateFilter,
+    best_reference_match,
+    mirror_pose,
+    pose_similarity,
+)
 
 
 def sample_pose() -> np.ndarray:
@@ -126,6 +131,18 @@ class DanceScoringTests(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertTrue(result.motion_used)
         self.assertGreater(result.score, 99.9)
+
+    def test_hold_filter_rejects_a_single_low_motion_sample(self) -> None:
+        hold_filter = HoldStateFilter(ema_alpha=1.0)
+        self.assertFalse(hold_filter.update(0.05))
+        self.assertFalse(hold_filter.update(0.12))
+
+    def test_hold_filter_uses_confirmation_and_hysteresis(self) -> None:
+        hold_filter = HoldStateFilter(ema_alpha=1.0)
+        self.assertFalse(hold_filter.update(0.05))
+        self.assertTrue(hold_filter.update(0.05))
+        self.assertTrue(hold_filter.update(0.08))
+        self.assertFalse(hold_filter.update(0.11))
 
 
 if __name__ == "__main__":

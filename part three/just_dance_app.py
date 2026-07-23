@@ -27,7 +27,7 @@ os.environ.setdefault("YOLO_CONFIG_DIR", str(Path(tempfile.gettempdir()) / "visu
 from ultralytics import YOLO  # noqa: E402
 
 from dance_scoring import (  # noqa: E402
-    MOTION_ACTIVE_THRESHOLD,
+    HoldStateFilter,
     MatchResult,
     best_reference_match,
     feedback_for_score,
@@ -137,6 +137,7 @@ class DanceGameApp:
         self.pose_history: deque[
             tuple[float, np.ndarray, np.ndarray]
         ] = deque(maxlen=32)
+        self.hold_filter = HoldStateFilter()
         self.total_score = 0
         self.combo = 0
         self.best_combo = 0
@@ -293,6 +294,7 @@ class DanceGameApp:
         self.reference_index = -1
         self.last_scored_generation = self.live_result.generation if self.live_result else -1
         self.pose_history.clear()
+        self.hold_filter.reset()
         self.total_score = self.combo = self.best_combo = 0
         self.score_sum = 0.0
         self.score_count = 0
@@ -310,6 +312,7 @@ class DanceGameApp:
             self.pause_started = time.perf_counter()
             self.active_event.clear()
             self.pose_history.clear()
+            self.hold_filter.reset()
             self.pause_button.configure(text="Resume")
             self.status_var.set("Paused")
         else:
@@ -317,6 +320,7 @@ class DanceGameApp:
             self.paused = False
             self.active_event.set()
             self.pose_history.clear()
+            self.hold_filter.reset()
             self.pause_button.configure(text="Pause")
             self.status_var.set("Playing")
 
@@ -325,6 +329,7 @@ class DanceGameApp:
         self.paused = False
         self.active_event.clear()
         self.pose_history.clear()
+        self.hold_filter.reset()
         self.status_var.set("Stopped — press Start to restart")
         self.pause_button.configure(text="Pause")
 
@@ -350,6 +355,7 @@ class DanceGameApp:
         self.last_scored_generation = live.generation
         if live.points is None or live.valid is None:
             self.pose_history.clear()
+            self.hold_filter.reset()
             self.latest_feedback = "NO POSE"
             return
 
@@ -406,15 +412,19 @@ class DanceGameApp:
             (live.timestamp, live.points.copy(), live.valid.copy())
         )
         if match is None:
+            self.hold_filter.reset()
             self.latest_feedback = "NO POSE"
             return
         self.latest_match = match
+        reference_is_holding = self.hold_filter.update(
+            match.reference_motion, match.motion_used
+        )
         label, game_points, colour = feedback_for_score(match.score)
         score_event = True
         if not match.motion_used:
             label, game_points, colour = "SYNC", 0, (220, 220, 220)
             score_event = False
-        elif match.reference_motion < MOTION_ACTIVE_THRESHOLD:
+        elif reference_is_holding:
             label, game_points, colour = "HOLD", 0, (220, 210, 70)
             score_event = False
         elif (
@@ -457,6 +467,8 @@ class DanceGameApp:
                     f"  activity {self.latest_match.player_motion:.2f}"
                     f"/{self.latest_match.reference_motion:.2f}"
                 )
+                if self.hold_filter.smoothed_motion is not None:
+                    detail += f"  ref~{self.hold_filter.smoothed_motion:.2f}"
         cv2.putText(frame, detail, (20, 72), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (235, 235, 235), 1, cv2.LINE_AA)
         return frame
 

@@ -34,7 +34,14 @@ ANGLE_TRIPLES = (
     (11, 13, 15), # left knee
     (12, 14, 16), # right knee
 )
-MOTION_ACTIVE_THRESHOLD = 0.09
+# A reference move is considered a genuine hold only after the UI-side
+# HoldStateFilter confirms that its smoothed activity is below this value.
+# The higher exit threshold adds hysteresis, preventing HOLD from flickering
+# when a slow movement sits close to the boundary.
+MOTION_ACTIVE_THRESHOLD = 0.07
+MOTION_HOLD_EXIT_THRESHOLD = 0.10
+MOTION_HOLD_CONFIRM_SAMPLES = 2
+MOTION_HOLD_EMA_ALPHA = 0.35
 MOTION_NOISE_FLOOR = 0.04
 MOTION_VECTOR_SIGMA = 0.22
 
@@ -56,6 +63,61 @@ class PoseScore:
 class MatchResult(PoseScore):
     reference_index: int = -1
     lag_frames: int = 0
+
+
+class HoldStateFilter:
+    """Debounce reference hold detection with smoothing and hysteresis."""
+
+    def __init__(
+        self,
+        enter_threshold: float = MOTION_ACTIVE_THRESHOLD,
+        exit_threshold: float = MOTION_HOLD_EXIT_THRESHOLD,
+        confirm_samples: int = MOTION_HOLD_CONFIRM_SAMPLES,
+        ema_alpha: float = MOTION_HOLD_EMA_ALPHA,
+    ) -> None:
+        if not 0.0 <= enter_threshold < exit_threshold:
+            raise ValueError("Hold thresholds must satisfy 0 <= enter < exit.")
+        if confirm_samples < 1:
+            raise ValueError("confirm_samples must be at least 1.")
+        if not 0.0 < ema_alpha <= 1.0:
+            raise ValueError("ema_alpha must be in (0, 1].")
+        self.enter_threshold = float(enter_threshold)
+        self.exit_threshold = float(exit_threshold)
+        self.confirm_samples = int(confirm_samples)
+        self.ema_alpha = float(ema_alpha)
+        self.reset()
+
+    def reset(self) -> None:
+        self.active = False
+        self.low_samples = 0
+        self.smoothed_motion: Optional[float] = None
+
+    def update(self, reference_motion: float, motion_used: bool = True) -> bool:
+        if not motion_used or not np.isfinite(reference_motion):
+            self.reset()
+            return False
+
+        motion = max(0.0, float(reference_motion))
+        if self.smoothed_motion is None:
+            self.smoothed_motion = motion
+        else:
+            self.smoothed_motion = (
+                self.ema_alpha * motion
+                + (1.0 - self.ema_alpha) * self.smoothed_motion
+            )
+
+        if self.active:
+            if self.smoothed_motion >= self.exit_threshold:
+                self.active = False
+                self.low_samples = 0
+        elif self.smoothed_motion < self.enter_threshold:
+            self.low_samples += 1
+            if self.low_samples >= self.confirm_samples:
+                self.active = True
+        else:
+            self.low_samples = 0
+
+        return self.active
 
 
 def _center(points: np.ndarray, valid: np.ndarray, indices: Iterable[int]) -> Optional[np.ndarray]:
