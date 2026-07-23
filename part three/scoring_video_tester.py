@@ -17,6 +17,7 @@ import cv2
 import numpy as np
 
 from dance_scoring import (
+    MOTION_ACTIVE_THRESHOLD,
     MatchResult,
     best_reference_match,
     feedback_for_score,
@@ -285,8 +286,15 @@ class ScoringVideoTester:
     def _score(self, reference_index: int, player_index: int) -> MatchResult | None:
         player_points = self.points[player_index]
         player_valid = self.valid[player_index]
+        motion_frames = max(1, int(round(self.args.motion_window * self.fps)))
+        previous_player_index = max(0, player_index - motion_frames)
+        player_previous_points = self.points[previous_player_index]
+        player_previous_valid = self.valid[previous_player_index]
         if self.mirror_player.get():
             player_points, player_valid = mirror_pose(player_points, player_valid)
+            player_previous_points, player_previous_valid = mirror_pose(
+                player_previous_points, player_previous_valid
+            )
         max_lag_frames = int(round(max(0.0, self.allowed_lag.get()) * self.fps))
         return best_reference_match(
             player_points,
@@ -296,6 +304,9 @@ class ScoringVideoTester:
             reference_index,
             max_lag_frames,
             allow_mirror=self.allow_mirror.get(),
+            player_previous_points=player_previous_points,
+            player_previous_valid=player_previous_valid,
+            motion_delta_frames=max(1, player_index - previous_player_index),
         )
 
     def _show_frame(self, reference_index: int) -> None:
@@ -332,7 +343,12 @@ class ScoringVideoTester:
             self.result_var.set("SIMILARITY   0.0  NO POSE")
             self.detail_var.set("No scoreable common joints")
         else:
-            label, _, _ = feedback_for_score(self.latest_match.score)
+            if not self.latest_match.motion_used:
+                label = "SYNC"
+            elif self.latest_match.reference_motion < MOTION_ACTIVE_THRESHOLD:
+                label = "HOLD"
+            else:
+                label, _, _ = feedback_for_score(self.latest_match.score)
             matched_lag = self.latest_match.lag_frames / self.fps
             expected_lag = (reference_index - player_index) / self.fps
             mirror_text = "yes" if self.latest_match.mirrored else "no"
@@ -341,7 +357,9 @@ class ScoringVideoTester:
             )
             self.detail_var.set(
                 f"expected lag {expected_lag:.1f}s | matched lag {matched_lag:.1f}s | "
-                f"mirror selected {mirror_text}"
+                f"mirror selected {mirror_text} | motion {self.latest_match.motion_score:.0f} | "
+                f"activity {self.latest_match.player_motion:.2f}/"
+                f"{self.latest_match.reference_motion:.2f}"
             )
 
         self._set_image(self.reference_label, reference_frame)
@@ -416,6 +434,8 @@ def run_check(args: argparse.Namespace) -> int:
     current = min(count - 1, max(20, count // 2))
     lag_frames = int(round(args.max_lag * fps))
     player_index = max(0, current - lag_frames)
+    motion_frames = max(1, int(round(args.motion_window * fps)))
+    previous_player_index = max(0, player_index - motion_frames)
     direct = best_reference_match(
         points[player_index],
         valid[player_index],
@@ -424,8 +444,14 @@ def run_check(args: argparse.Namespace) -> int:
         current,
         lag_frames,
         allow_mirror=False,
+        player_previous_points=points[previous_player_index],
+        player_previous_valid=valid[previous_player_index],
+        motion_delta_frames=max(1, player_index - previous_player_index),
     )
     mirrored_points, mirrored_valid = mirror_pose(points[player_index], valid[player_index])
+    mirrored_previous_points, mirrored_previous_valid = mirror_pose(
+        points[previous_player_index], valid[previous_player_index]
+    )
     mirrored = best_reference_match(
         mirrored_points,
         mirrored_valid,
@@ -434,6 +460,9 @@ def run_check(args: argparse.Namespace) -> int:
         current,
         lag_frames,
         allow_mirror=True,
+        player_previous_points=mirrored_previous_points,
+        player_previous_valid=mirrored_previous_valid,
+        motion_delta_frames=max(1, player_index - previous_player_index),
     )
     if direct is None or mirrored is None:
         raise RuntimeError("The cache did not contain a scoreable check pose.")
@@ -463,6 +492,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
     parser.add_argument("--player-delay", type=float, default=0.5)
     parser.add_argument("--max-lag", type=float, default=0.8)
+    parser.add_argument("--motion-window", type=float, default=0.4)
     parser.add_argument("--mirror-player", action="store_true")
     parser.add_argument("--no-mirror", action="store_true")
     parser.add_argument("--check", action="store_true")
@@ -471,8 +501,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.player_delay < 0.0 or args.max_lag < 0.0:
-        raise ValueError("Delay values must not be negative.")
+    if args.player_delay < 0.0 or args.max_lag < 0.0 or args.motion_window <= 0.0:
+        raise ValueError("Delay values must not be negative and motion window must be positive.")
     if args.check:
         return run_check(args)
 

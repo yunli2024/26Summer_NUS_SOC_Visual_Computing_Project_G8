@@ -65,7 +65,12 @@ See `TASK1_REPORT.md` for the tested-video settings, real measurements, primary-
 
 `just_dance_app.py` opens a two-panel GUI. The left panel plays the annotated reference dancer; the right panel shows the mirrored webcam, detected skeleton, similarity, reaction-delay match, score, and combo.
 
-The program uses the Task 1 pose cache for the reference side, so only webcam frames require YOLO inference during the game. Pose comparison is invariant to screen position and body size, combines limb angles with normalized joint positions, tolerates up to 0.8 seconds of reaction delay, and can accept mirrored moves.
+The program uses the Task 1 pose cache for the reference side, so only webcam
+frames require YOLO inference during the game. Scoring combines pose similarity
+with motion over a 0.4-second history window, tolerates up to 0.8 seconds of
+reaction delay, and can accept mirrored moves. Reference hold frames display
+`HOLD` without awarding points; standing still while the reference moves
+displays `MOVE!`.
 
 First generate the 30-second reference clip and cache (the included output has already been generated):
 
@@ -98,6 +103,10 @@ Controls:
 - **Accept mirrored moves** lets a dancer perform a left/right mirrored version of the reference.
 
 On a CPU-only machine, webcam pose inference is expected to update more slowly than the 10 FPS reference video. The reference playback remains clock-synchronized and the temporal matcher scores every newly available camera pose. If necessary, use `--image-size 320` for faster but slightly less precise detection.
+
+Use `--motion-window 0.4` to adjust the motion-comparison interval. A shorter
+window responds faster but is more sensitive to keypoint jitter; a longer
+window emphasizes larger movements.
 
 ### Scoring A/B tester
 

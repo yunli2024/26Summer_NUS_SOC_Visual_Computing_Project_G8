@@ -34,6 +34,9 @@ ANGLE_TRIPLES = (
     (11, 13, 15), # left knee
     (12, 14, 16), # right knee
 )
+MOTION_ACTIVE_THRESHOLD = 0.09
+MOTION_NOISE_FLOOR = 0.04
+MOTION_VECTOR_SIGMA = 0.22
 
 
 @dataclass(frozen=True)
@@ -43,6 +46,10 @@ class PoseScore:
     angle_score: float
     coverage: float
     mirrored: bool = False
+    motion_score: float = 100.0
+    player_motion: float = 0.0
+    reference_motion: float = 0.0
+    motion_used: bool = False
 
 
 @dataclass(frozen=True)
@@ -186,6 +193,127 @@ def pose_similarity(
     return direct
 
 
+def _motion_aware_score(
+    pose_score: PoseScore,
+    player_previous_points: np.ndarray,
+    player_previous_valid: np.ndarray,
+    player_points: np.ndarray,
+    player_valid: np.ndarray,
+    reference_previous_points: np.ndarray,
+    reference_previous_valid: np.ndarray,
+    reference_points: np.ndarray,
+    reference_valid: np.ndarray,
+) -> PoseScore:
+    """Combine pose similarity with relative joint motion over a short window."""
+    player_previous, player_previous_ok = normalize_pose(
+        player_previous_points, player_previous_valid
+    )
+    player_current, player_current_ok = normalize_pose(player_points, player_valid)
+    reference_previous, reference_previous_ok = normalize_pose(
+        reference_previous_points, reference_previous_valid
+    )
+    reference_current, reference_current_ok = normalize_pose(
+        reference_points, reference_valid
+    )
+    if pose_score.mirrored:
+        reference_previous, reference_previous_ok = mirror_pose(
+            reference_previous, reference_previous_ok
+        )
+        reference_current, reference_current_ok = mirror_pose(
+            reference_current, reference_current_ok
+        )
+
+    common = (
+        player_previous_ok
+        & player_current_ok
+        & reference_previous_ok
+        & reference_current_ok
+    )
+    common_indices = BODY_JOINTS[common[BODY_JOINTS]]
+    if common_indices.size < 4:
+        return pose_score
+
+    player_delta = (
+        player_current[common_indices] - player_previous[common_indices]
+    )
+    reference_delta = (
+        reference_current[common_indices] - reference_previous[common_indices]
+    )
+    weights = np.ones(common_indices.size, dtype=np.float32)
+    weights[np.isin(common_indices, (9, 10, 15, 16))] = 1.35
+
+    player_squared = np.sum(player_delta * player_delta, axis=1)
+    reference_squared = np.sum(reference_delta * reference_delta, axis=1)
+    player_motion = float(np.sqrt(np.average(player_squared, weights=weights)))
+    reference_motion = float(
+        np.sqrt(np.average(reference_squared, weights=weights))
+    )
+
+    # During a genuine hold, pose quality alone should decide the score.
+    if reference_motion < MOTION_ACTIVE_THRESHOLD:
+        return PoseScore(
+            score=pose_score.score,
+            position_score=pose_score.position_score,
+            angle_score=pose_score.angle_score,
+            coverage=pose_score.coverage,
+            mirrored=pose_score.mirrored,
+            motion_score=100.0,
+            player_motion=player_motion,
+            reference_motion=reference_motion,
+            motion_used=True,
+        )
+
+    motion_errors = np.linalg.norm(player_delta - reference_delta, axis=1)
+    vector_similarities = np.exp(
+        -0.5 * (motion_errors / MOTION_VECTOR_SIGMA) ** 2
+    )
+    vector_similarity = float(
+        np.average(vector_similarities, weights=weights)
+    )
+
+    effective_player = max(0.0, player_motion - MOTION_NOISE_FLOOR)
+    effective_reference = max(
+        1e-6, reference_motion - MOTION_NOISE_FLOOR
+    )
+    activity_ratio = effective_player / effective_reference
+    activity_similarity = float(
+        np.exp(
+            -0.5
+            * (
+                np.log(
+                    (effective_player + 0.02)
+                    / (effective_reference + 0.02)
+                )
+                / 0.70
+            )
+            ** 2
+        )
+    )
+    motion_similarity = 0.70 * vector_similarity + 0.30 * activity_similarity
+
+    # A static player must not receive a high score by matching a broadly
+    # similar pose while the reference dancer is visibly moving.
+    activity_progress = float(
+        np.clip((activity_ratio - 0.20) / 0.55, 0.0, 1.0)
+    )
+    anti_static_factor = 0.45 + 0.55 * activity_progress
+    combined = (
+        0.55 * pose_score.score + 0.45 * (100.0 * motion_similarity)
+    )
+    combined *= anti_static_factor
+    return PoseScore(
+        score=float(np.clip(combined, 0.0, 100.0)),
+        position_score=pose_score.position_score,
+        angle_score=pose_score.angle_score,
+        coverage=pose_score.coverage,
+        mirrored=pose_score.mirrored,
+        motion_score=100.0 * motion_similarity,
+        player_motion=player_motion,
+        reference_motion=reference_motion,
+        motion_used=True,
+    )
+
+
 def best_reference_match(
     player_points: np.ndarray,
     player_valid: np.ndarray,
@@ -194,6 +322,9 @@ def best_reference_match(
     current_index: int,
     max_lag_frames: int,
     allow_mirror: bool = True,
+    player_previous_points: Optional[np.ndarray] = None,
+    player_previous_valid: Optional[np.ndarray] = None,
+    motion_delta_frames: int = 1,
 ) -> Optional[MatchResult]:
     """Find the best recent reference pose so normal human reaction delay is tolerated."""
     count = len(reference_points)
@@ -211,6 +342,25 @@ def best_reference_match(
                 reference_valid[index],
                 allow_mirror=allow_mirror,
             )
+            previous_reference_index = index - max(
+                1, int(motion_delta_frames)
+            )
+            if (
+                player_previous_points is not None
+                and player_previous_valid is not None
+                and previous_reference_index >= 0
+            ):
+                candidate = _motion_aware_score(
+                    candidate,
+                    player_previous_points,
+                    player_previous_valid,
+                    player_points,
+                    player_valid,
+                    reference_points[previous_reference_index],
+                    reference_valid[previous_reference_index],
+                    reference_points[index],
+                    reference_valid[index],
+                )
         except ValueError:
             continue
         result = MatchResult(
@@ -219,6 +369,10 @@ def best_reference_match(
             angle_score=candidate.angle_score,
             coverage=candidate.coverage,
             mirrored=candidate.mirrored,
+            motion_score=candidate.motion_score,
+            player_motion=candidate.player_motion,
+            reference_motion=candidate.reference_motion,
+            motion_used=candidate.motion_used,
             reference_index=index,
             lag_frames=current_index - index,
         )

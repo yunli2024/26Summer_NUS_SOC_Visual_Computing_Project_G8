@@ -7,6 +7,7 @@ the webcam is sent through YOLO, which keeps the CPU version usable.
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import os
 import sys
 import tempfile
@@ -25,7 +26,12 @@ os.environ.setdefault("YOLO_CONFIG_DIR", str(Path(tempfile.gettempdir()) / "visu
 
 from ultralytics import YOLO  # noqa: E402
 
-from dance_scoring import MatchResult, best_reference_match, feedback_for_score  # noqa: E402
+from dance_scoring import (  # noqa: E402
+    MOTION_ACTIVE_THRESHOLD,
+    MatchResult,
+    best_reference_match,
+    feedback_for_score,
+)
 from pose_analyzer import PrimaryDancerTracker, draw_other_people, draw_pose, extract_detections  # noqa: E402
 
 
@@ -42,6 +48,7 @@ class LiveResult:
     points: Optional[np.ndarray]
     valid: Optional[np.ndarray]
     inference_ms: float
+    timestamp: float
 
 
 def open_camera(camera_index: int, width: int = 960, height: int = 540) -> cv2.VideoCapture:
@@ -127,6 +134,9 @@ class DanceGameApp:
         self.reference_index = -1
         self.reference_frame: Optional[np.ndarray] = None
         self.last_scored_generation = -1
+        self.pose_history: deque[
+            tuple[float, np.ndarray, np.ndarray]
+        ] = deque(maxlen=32)
         self.total_score = 0
         self.combo = 0
         self.best_combo = 0
@@ -262,6 +272,7 @@ class DanceGameApp:
                     None if points is None else points.copy(),
                     None if valid is None else valid.copy(),
                     inference_ms,
+                    time.perf_counter(),
                 )
                 with self.live_lock:
                     self.live_result = result
@@ -281,6 +292,7 @@ class DanceGameApp:
         self.paused_duration = 0.0
         self.reference_index = -1
         self.last_scored_generation = self.live_result.generation if self.live_result else -1
+        self.pose_history.clear()
         self.total_score = self.combo = self.best_combo = 0
         self.score_sum = 0.0
         self.score_count = 0
@@ -297,12 +309,14 @@ class DanceGameApp:
             self.paused = True
             self.pause_started = time.perf_counter()
             self.active_event.clear()
+            self.pose_history.clear()
             self.pause_button.configure(text="Resume")
             self.status_var.set("Paused")
         else:
             self.paused_duration += time.perf_counter() - self.pause_started
             self.paused = False
             self.active_event.set()
+            self.pose_history.clear()
             self.pause_button.configure(text="Pause")
             self.status_var.set("Playing")
 
@@ -310,6 +324,7 @@ class DanceGameApp:
         self.running = False
         self.paused = False
         self.active_event.clear()
+        self.pose_history.clear()
         self.status_var.set("Stopped — press Start to restart")
         self.pause_button.configure(text="Pause")
 
@@ -330,31 +345,94 @@ class DanceGameApp:
             self.status_var.set(f"Finished · best combo {self.best_combo}")
 
     def _score_live_result(self, live: LiveResult) -> None:
-        if live.generation == self.last_scored_generation or live.points is None or live.valid is None:
+        if live.generation == self.last_scored_generation:
             return
         self.last_scored_generation = live.generation
+        if live.points is None or live.valid is None:
+            self.pose_history.clear()
+            self.latest_feedback = "NO POSE"
+            return
+
+        target_age = self.args.motion_window
+        minimum_age = max(0.10, target_age * 0.50)
+        maximum_age = max(0.80, target_age * 2.50)
+        while (
+            self.pose_history
+            and live.timestamp - self.pose_history[0][0] > maximum_age
+        ):
+            self.pose_history.popleft()
+        eligible_history = [
+            item
+            for item in self.pose_history
+            if minimum_age <= live.timestamp - item[0] <= maximum_age
+        ]
+        previous = (
+            min(
+                eligible_history,
+                key=lambda item: abs(
+                    (live.timestamp - item[0]) - target_age
+                ),
+            )
+            if eligible_history
+            else None
+        )
+        previous_points = previous[1] if previous is not None else None
+        previous_valid = previous[2] if previous is not None else None
+        motion_delta_frames = (
+            max(
+                1,
+                int(
+                    round(
+                        (live.timestamp - previous[0])
+                        * self.reference_fps
+                    )
+                ),
+            )
+            if previous is not None
+            else 1
+        )
+
         max_lag = int(round(self.args.max_lag * self.reference_fps))
         match = best_reference_match(
             live.points, live.valid,
             self.reference_points, self.reference_valid,
             self.reference_index, max_lag,
             allow_mirror=self.allow_mirror.get(),
+            player_previous_points=previous_points,
+            player_previous_valid=previous_valid,
+            motion_delta_frames=motion_delta_frames,
+        )
+        self.pose_history.append(
+            (live.timestamp, live.points.copy(), live.valid.copy())
         )
         if match is None:
             self.latest_feedback = "NO POSE"
             return
         self.latest_match = match
         label, game_points, colour = feedback_for_score(match.score)
+        score_event = True
+        if not match.motion_used:
+            label, game_points, colour = "SYNC", 0, (220, 220, 220)
+            score_event = False
+        elif match.reference_motion < MOTION_ACTIVE_THRESHOLD:
+            label, game_points, colour = "HOLD", 0, (220, 210, 70)
+            score_event = False
+        elif (
+            match.motion_used
+            and match.player_motion < max(0.06, 0.45 * match.reference_motion)
+        ):
+            label, game_points, colour = "MOVE!", 0, (80, 80, 255)
         self.latest_feedback = label
         self.latest_colour = colour
-        self.total_score += game_points
-        self.score_sum += match.score
-        self.score_count += 1
-        if game_points > 0:
-            self.combo += 1
-            self.best_combo = max(self.best_combo, self.combo)
-        else:
-            self.combo = 0
+        if score_event:
+            self.total_score += game_points
+            self.score_sum += match.score
+            self.score_count += 1
+            if game_points > 0:
+                self.combo += 1
+                self.best_combo = max(self.best_combo, self.combo)
+            else:
+                self.combo = 0
         self._update_scoreboard()
 
     def _update_scoreboard(self) -> None:
@@ -373,6 +451,12 @@ class DanceGameApp:
             lag_seconds = self.latest_match.lag_frames / self.reference_fps
             mirror_text = "  mirror" if self.latest_match.mirrored else ""
             detail += f"   lag {lag_seconds:.2f}s{mirror_text}"
+            if self.latest_match.motion_used:
+                detail += (
+                    f"   motion {self.latest_match.motion_score:.0f}"
+                    f"  activity {self.latest_match.player_motion:.2f}"
+                    f"/{self.latest_match.reference_motion:.2f}"
+                )
         cv2.putText(frame, detail, (20, 72), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (235, 235, 235), 1, cv2.LINE_AA)
         return frame
 
@@ -451,6 +535,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--keypoint-confidence", type=float, default=0.35)
     parser.add_argument("--smoothing", type=float, default=0.60)
     parser.add_argument("--max-lag", type=float, default=0.80, help="Allowed reaction delay in seconds")
+    parser.add_argument(
+        "--motion-window",
+        type=float,
+        default=0.40,
+        help="Seconds of player/reference history used for motion scoring",
+    )
     parser.add_argument("--no-mirror", action="store_true", help="Require anatomical left/right to match exactly")
     parser.add_argument("--check", action="store_true", help="Validate files and scoring without opening the GUI")
     return parser.parse_args()
@@ -459,6 +549,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
+        if args.max_lag < 0.0 or args.motion_window <= 0.0:
+            raise ValueError("--max-lag must be non-negative and --motion-window must be positive.")
         if args.check:
             return validate_inputs(args)
         import tkinter as tk

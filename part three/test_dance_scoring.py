@@ -59,6 +59,74 @@ class DanceScoringTests(unittest.TestCase):
         self.assertEqual(result.lag_frames, 2)
         self.assertGreater(result.score, 99.9)
 
+    def test_matching_motion_scores_near_100(self) -> None:
+        previous = self.pose.copy()
+        current = self.pose.copy()
+        current[7] = (-1.7, -1.2)
+        current[9] = (-2.3, -2.1)
+        references = np.stack([previous, current])
+        valid = np.ones((2, 17), dtype=bool)
+        result = best_reference_match(
+            current,
+            self.valid,
+            references,
+            valid,
+            current_index=1,
+            max_lag_frames=0,
+            allow_mirror=False,
+            player_previous_points=previous,
+            player_previous_valid=self.valid,
+            motion_delta_frames=1,
+        )
+        self.assertIsNotNone(result)
+        self.assertTrue(result.motion_used)
+        self.assertGreater(result.motion_score, 99.9)
+        self.assertGreater(result.score, 99.9)
+
+    def test_static_player_is_penalized_while_reference_moves(self) -> None:
+        previous = self.pose.copy()
+        current = self.pose.copy()
+        current[7] = (-1.7, -1.2)
+        current[9] = (-2.3, -2.1)
+        references = np.stack([previous, current])
+        valid = np.ones((2, 17), dtype=bool)
+        result = best_reference_match(
+            current,
+            self.valid,
+            references,
+            valid,
+            current_index=1,
+            max_lag_frames=0,
+            allow_mirror=False,
+            player_previous_points=current,
+            player_previous_valid=self.valid,
+            motion_delta_frames=1,
+        )
+        self.assertIsNotNone(result)
+        self.assertTrue(result.motion_used)
+        self.assertGreater(result.reference_motion, 0.09)
+        self.assertLess(result.player_motion, 1e-6)
+        self.assertLess(result.score, 55.0)
+
+    def test_static_hold_is_not_penalized(self) -> None:
+        references = np.repeat(self.pose[None, ...], 2, axis=0)
+        valid = np.ones((2, 17), dtype=bool)
+        result = best_reference_match(
+            self.pose,
+            self.valid,
+            references,
+            valid,
+            current_index=1,
+            max_lag_frames=0,
+            allow_mirror=False,
+            player_previous_points=self.pose,
+            player_previous_valid=self.valid,
+            motion_delta_frames=1,
+        )
+        self.assertIsNotNone(result)
+        self.assertTrue(result.motion_used)
+        self.assertGreater(result.score, 99.9)
+
 
 if __name__ == "__main__":
     unittest.main()
