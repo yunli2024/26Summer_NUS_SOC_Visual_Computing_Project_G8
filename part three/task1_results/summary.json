@@ -1,0 +1,39 @@
+[
+  {
+    "input": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part three\\dance_example_1.mp4",
+    "source": {
+      "width": 1280,
+      "height": 720,
+      "fps": 30.0,
+      "reported_frames": 2682
+    },
+    "settings": {
+      "model": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part three\\yolov8n-pose.pt",
+      "image_size": 416,
+      "person_confidence": 0.3,
+      "keypoint_confidence": 0.35,
+      "smoothing_alpha": 0.6,
+      "stride": 3,
+      "start_frame": 300,
+      "max_frames": 60,
+      "device": "cpu"
+    },
+    "results": {
+      "processed_frames": 60,
+      "primary_dancer_frames": 60,
+      "primary_dancer_rate": 1.0,
+      "multi_person_frames": 1,
+      "multi_person_rate": 0.016666666666666666,
+      "average_visible_keypoints": 16.95,
+      "average_pose_confidence": 0.9345467905203502,
+      "average_inference_ms": 170.5503449998408,
+      "processing_fps": 4.7299788685831095,
+      "elapsed_seconds": 12.685046099999454
+    },
+    "environment": {
+      "python": "3.11.15",
+      "opencv": "4.12.0",
+      "numpy": "2.2.6"
+    }
+  }
+]
