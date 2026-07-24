@@ -1,0 +1,11 @@
+# Install opencv-contrib-python (not opencv-python) because LBF needs cv2.face.
+opencv-contrib-python>=4.10
+numpy>=1.26
+scikit-learn>=1.5
+joblib>=1.4
+matplotlib>=3.8
+pillow>=10
+ultralytics>=8.3
+torch>=2.2
+torchvision>=0.17
+ursina>=7.0

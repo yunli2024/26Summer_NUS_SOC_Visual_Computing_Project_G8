@@ -1,0 +1,7 @@
+﻿name: vc_sws3026
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - tk
+  - pip

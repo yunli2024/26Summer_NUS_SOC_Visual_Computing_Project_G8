@@ -1,0 +1,90 @@
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+~$*
+
+# Model weights and large binary artifacts
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.h5
+
+# Large datasets, videos, archives, and generated experiment outputs
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.zip
+*.rar
+*.7z
+runs/
+wandb/
+mlruns/
+outputs/
+checkpoints/
+VisualComputingProject/**/data/
+VisualComputingProject/**/models/
+VisualComputingProject/resources/
+VisualComputingProject/project_materials/original_resources/
+
+# Local environment files
+.env
+.env.*
+
+# Canonical runtime resources retained by the merged baseline
+!VisualComputingProject/resources/
+VisualComputingProject/resources/*
+!VisualComputingProject/resources/README.md
+!VisualComputingProject/resources/face_models/
+VisualComputingProject/resources/face_models/*
+!VisualComputingProject/resources/face_models/haarcascade_frontalface_default.xml
+!VisualComputingProject/resources/face_models/face_detection_yunet_2023mar.onnx
+# Keep the 54 MiB LBF model local; restore it using resources/README.md.
+VisualComputingProject/resources/face_models/lbfmodel.yaml
+!VisualComputingProject/resources/pose_models/
+VisualComputingProject/resources/pose_models/*
+!VisualComputingProject/resources/pose_models/yolov8n-pose.pt
+!VisualComputingProject/resources/videos/
+VisualComputingProject/resources/videos/*
+!VisualComputingProject/resources/videos/dance_example_1.mp4
+!VisualComputingProject/resources/videos/dance_example_liyunzang.mp4
+!VisualComputingProject/resources/expression_data/
+VisualComputingProject/resources/expression_data/*
+# Keep the 78 MiB FER-style training archive local.
+VisualComputingProject/resources/expression_data/facial_expression_dataset.zip
+!VisualComputingProject/expert_level/models/
+VisualComputingProject/expert_level/models/*
+!VisualComputingProject/expert_level/models/keypoint/
+VisualComputingProject/expert_level/models/keypoint/*
+!VisualComputingProject/expert_level/models/keypoint/current/
+VisualComputingProject/expert_level/models/keypoint/current/*
+!VisualComputingProject/expert_level/models/keypoint/current/expression_classifier.joblib
+!VisualComputingProject/expert_level/models/keypoint/legacy_hgb/
+VisualComputingProject/expert_level/models/keypoint/legacy_hgb/*
+!VisualComputingProject/expert_level/models/keypoint/legacy_hgb/expression_classifier.joblib
+
+# Local review/render intermediates
+tmp/

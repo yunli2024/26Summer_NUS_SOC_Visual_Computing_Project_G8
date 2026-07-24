@@ -1,0 +1,115 @@
+{
+  "accuracy": 0.4313179158539983,
+  "macro_f1": 0.3914376879987604,
+  "weighted_f1": 0.4259380395483851,
+  "training_seconds": 358.80080140000064,
+  "batch_prediction_ms_per_image": 0.4941481053225141,
+  "single_prediction_ms_per_image": 23.40745450000395,
+  "meets_30ms_requirement": true,
+  "train_samples": 28709,
+  "test_samples": 7178,
+  "feature_count": 136,
+  "classifier": "hgb",
+  "svm_c": 10.0,
+  "versions": {
+    "python": "3.11.15",
+    "opencv": "4.12.0",
+    "numpy": "2.2.6",
+    "scikit_learn": "1.9.0"
+  },
+  "classification_report": {
+    "angry": {
+      "precision": 0.3200419727177335,
+      "recall": 0.31837160751565763,
+      "f1-score": 0.31920460491889063,
+      "support": 958.0
+    },
+    "disgust": {
+      "precision": 0.24817518248175183,
+      "recall": 0.3063063063063063,
+      "f1-score": 0.27419354838709675,
+      "support": 111.0
+    },
+    "fear": {
+      "precision": 0.28746594005449594,
+      "recall": 0.2060546875,
+      "f1-score": 0.24004550625711035,
+      "support": 1024.0
+    },
+    "happy": {
+      "precision": 0.6298373527762199,
+      "recall": 0.6330326944757609,
+      "f1-score": 0.6314309811639022,
+      "support": 1774.0
+    },
+    "neutral": {
+      "precision": 0.38571428571428573,
+      "recall": 0.43795620437956206,
+      "f1-score": 0.41017850360805164,
+      "support": 1233.0
+    },
+    "sad": {
+      "precision": 0.3228813559322034,
+      "recall": 0.30553327987169204,
+      "f1-score": 0.31396786155747836,
+      "support": 1247.0
+    },
+    "surprise": {
+      "precision": 0.5065590312815338,
+      "recall": 0.6040914560770156,
+      "f1-score": 0.5510428100987925,
+      "support": 831.0
+    },
+    "accuracy": 0.4313179158539983,
+    "macro avg": {
+      "precision": 0.3858107315654606,
+      "recall": 0.4016208908751421,
+      "f1-score": 0.3914376879987604,
+      "support": 7178.0
+    },
+    "weighted avg": {
+      "precision": 0.4242147620072454,
+      "recall": 0.4313179158539983,
+      "f1-score": 0.4259380395483851,
+      "support": 7178.0
+    }
+  },
+  "extraction": {
+    "feature_version": "lbf68_eye_aligned_v1",
+    "dataset": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset",
+    "face_mode": "center",
+    "image_size": 192,
+    "center_inset": 0.08,
+    "classes": [
+      "angry",
+      "disgust",
+      "fear",
+      "happy",
+      "neutral",
+      "sad",
+      "surprise"
+    ],
+    "splits": {
+      "train": {
+        "requested": 28709,
+        "successful": 28709,
+        "failed": 0,
+        "success_rate": 1.0,
+        "methods": {
+          "center": 28709
+        },
+        "seconds": 687.3024651000014
+      },
+      "test": {
+        "requested": 7178,
+        "successful": 7178,
+        "failed": 0,
+        "success_rate": 1.0,
+        "methods": {
+          "center": 7178
+        },
+        "seconds": 164.53476220000448
+      }
+    }
+  }
+}

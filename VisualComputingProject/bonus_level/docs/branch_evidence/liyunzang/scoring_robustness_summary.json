@@ -1,0 +1,12 @@
+{
+  "model": "D:\\26spring_NUS_SOC_SWS\\project\\demo_0715\\yolov8n-pose.pt",
+  "valid_samples": 24,
+  "near_offset": 8,
+  "wrong_offset": 180,
+  "near_mean": 92.61265166790054,
+  "near_p10": 87.31095896355127,
+  "wrong_mean": 82.54801512118142,
+  "wrong_p90": 92.17310784549736,
+  "wrong_super_rate": 0.7083333333333334,
+  "mean_separation": 10.064636546719115
+}
