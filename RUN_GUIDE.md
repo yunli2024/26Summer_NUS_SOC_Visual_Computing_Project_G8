@@ -5,7 +5,7 @@
 - Beginner：本地 Haar + LBF 68 点实时检测；
 - Expert：Zhangyx `part two`；
 - Bonus：Zhangyx `part three`；
-- Bonus 扩展：Part Three Mario、原独立 Mario、3D Runner。
+- Bonus 扩展：已整合的 Mario 姿态控制游戏、3D Runner。
 
 所有 webcam/GUI 程序必须在本地 PowerShell 中运行，不要使用 Google Colab
 或 Jupyter Notebook。
@@ -358,25 +358,22 @@ python VisualComputingProject\bonus_level\pose_analyzer.py `
 
 不要求运行完整 TikTok dataset。Presentation 应挑选单人和多人案例比较。
 
-## 8. Bonus Task 2 - 生成 reference cache
+## 8. Bonus Task 2 - 准备 reference cache
 
-Just Dance 运行前必须生成：
+Just Dance 运行时需要：
 
 - annotated reference MP4；
 - `pose_cache.npz`。
 
-执行：
+现在 `danceapp.py` 会在首次启动时自动检查并生成这两个文件。推荐在正式
+Demo 前单独执行一次预处理：
 
 ```powershell
-python VisualComputingProject\bonus_level\pose_analyzer.py `
-  VisualComputingProject\resources\videos\dance_example_1.mp4 `
-  --start-frame 300 `
-  --max-frames 300 `
-  --stride 3 `
-  --image-size 416 `
-  --contact-every 60 `
-  --output VisualComputingProject\bonus_level\task2_results
+python VisualComputingProject\bonus_level\danceapp.py --prepare-only
 ```
+
+默认会处理完整参考视频，每两帧取一帧，以降低 CPU 预处理时间。第一次运行
+可能需要几分钟；完成后再次启动不会重复生成。
 
 预期生成：
 
@@ -386,6 +383,34 @@ VisualComputingProject\bonus_level\task2_results\dance_example_1\pose_cache.npz
 ```
 
 这两个运行产物不会上传 GitHub，新 clone 需要重新生成。
+
+需要强制重新生成：
+
+```powershell
+python VisualComputingProject\bonus_level\danceapp.py `
+  --prepare-only `
+  --rebuild-reference
+```
+
+希望使用完整 30 FPS reference：
+
+```powershell
+python VisualComputingProject\bonus_level\danceapp.py `
+  --prepare-only `
+  --rebuild-reference `
+  --prepare-stride 1
+```
+
+也可以直接调用底层 `pose_analyzer.py`。此时输出目录必须指定为
+`bonus_level\task2_results`：
+
+```powershell
+python VisualComputingProject\bonus_level\pose_analyzer.py `
+  VisualComputingProject\resources\videos\dance_example_1.mp4 `
+  --stride 2 `
+  --image-size 416 `
+  --output VisualComputingProject\bonus_level\task2_results
+```
 
 CPU 较慢时先用 30 帧验证：
 
@@ -409,7 +434,7 @@ python VisualComputingProject\bonus_level\test_dance_scoring.py
 
 ### 9.2 无 webcam 输入检查
 
-生成正式 cache 后：
+该命令会自动准备缺失的默认 cache，然后执行无摄像头检查：
 
 ```powershell
 python VisualComputingProject\bonus_level\just_dance_app.py --check
@@ -487,13 +512,14 @@ Headless deterministic check：
 python VisualComputingProject\bonus_level\scoring_video_tester.py --check
 ```
 
-## 11. Part Three Mario Demo
+## 11. 已整合的 Mario Demo
 
-这是 Zhangyx Part Three 内附的 Mario 扩展：
+Zhangyx Part Three 的 Mario 已整合到独立的 `bonus_level_mario` 目录。
+推荐从这个统一目录运行：
 
 ```powershell
-python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --check
-python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py
+.\run_mario.ps1 --check
+.\run_mario.ps1
 ```
 
 GUI 打开后点击 `Start Camera`。
@@ -501,31 +527,25 @@ GUI 打开后点击 `Start Camera`。
 第二个摄像头：
 
 ```powershell
-python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --camera 1
+.\run_mario.ps1 --camera 1
 ```
 
 CPU 较慢：
 
 ```powershell
-python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --image-size 256
+.\run_mario.ps1 --image-size 256
 ```
 
 测试：
 
 ```powershell
-python -m unittest discover -s VisualComputingProject\bonus_level\mario_demo -p "test_*.py" -v
+python -m unittest discover -s VisualComputingProject\bonus_level_mario -p "test_*.py" -v
 ```
 
-## 12. 保留的独立扩展
+原始的 `bonus_level\mario_demo` 目录作为 Part Three 来源副本保留；后续运行和
+修改以 `bonus_level_mario` 为准。
 
-### 独立 Mario
-
-```powershell
-.\run_mario.ps1 --check
-.\run_mario.ps1
-```
-
-### 3D Runner
+## 12. 3D Runner 扩展
 
 ```powershell
 python VisualComputingProject\bonus_level_action_game\main.py
@@ -553,7 +573,7 @@ python VisualComputingProject\bonus_level_action_game\main.py
 - Part Three scoring tests；
 - Part Two CLI 和 effect preview；
 - Part Three CLI；
-- Part Three Mario validation；
+- 已整合 Mario validation；
 - 如果正式 Bonus cache 已生成，再执行 Just Dance input check。
 
 不会自动打开 webcam。
@@ -592,7 +612,12 @@ angry disgust fear happy neutral sad surprise
 
 ### Bonus 报 `pose_cache.npz` 找不到
 
-先执行第 8 节生成 reference cache。
+当前版本会自动生成默认 cache。如果自动生成失败，先确认公共视频与模型存在，
+再运行：
+
+```powershell
+python VisualComputingProject\bonus_level\danceapp.py --prepare-only
+```
 
 ### 摄像头打不开
 
@@ -629,7 +654,7 @@ conda activate vc_sws3026
 可选扩展：
 
 ```powershell
-python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py
+.\run_mario.ps1
 python VisualComputingProject\bonus_level_action_game\main.py
 ```
 

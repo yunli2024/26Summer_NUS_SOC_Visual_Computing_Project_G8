@@ -19,7 +19,9 @@ import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
-os.environ.setdefault("YOLO_CONFIG_DIR", str(Path(tempfile.gettempdir()) / "visual-computing-yolo"))
+YOLO_CONFIG_PATH = Path(tempfile.gettempdir()) / "visual-computing-yolo"
+YOLO_CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("YOLO_CONFIG_DIR", str(YOLO_CONFIG_PATH))
 DEFAULT_MODEL = PROJECT_DIR / "resources" / "pose_models" / "yolov8n-pose.pt"
 DEFAULT_VIDEO = PROJECT_DIR / "resources" / "videos" / "dance_example_1.mp4"
 DEFAULT_OUTPUT = BASE_DIR / "task1_results"
@@ -33,6 +35,15 @@ SKELETON = (
     (11, 13), (13, 15),
     (12, 14), (14, 16),
 )
+
+
+def portable_project_path(path: Path) -> str:
+    """Prefer a repository-relative path in reports generated inside the project."""
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(PROJECT_DIR.resolve()).as_posix()
+    except ValueError:
+        return str(resolved)
 
 
 def box_iou(first: np.ndarray, second: np.ndarray) -> float:
@@ -333,7 +344,7 @@ def analyze_video(model, input_path: Path, output_root: Path, args: argparse.Nam
 
     elapsed = time.perf_counter() - started
     statistics = {
-        "input": str(input_path.resolve()),
+        "input": portable_project_path(input_path),
         "source": {
             "width": width,
             "height": height,
@@ -341,7 +352,7 @@ def analyze_video(model, input_path: Path, output_root: Path, args: argparse.Nam
             "reported_frames": source_frames,
         },
         "settings": {
-            "model": str(args.model.resolve()),
+            "model": portable_project_path(args.model),
             "image_size": args.image_size,
             "person_confidence": args.person_confidence,
             "keypoint_confidence": args.keypoint_confidence,

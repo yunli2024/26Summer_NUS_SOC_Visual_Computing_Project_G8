@@ -11,6 +11,7 @@ import math
 import os
 import queue
 import sys
+import tempfile
 import threading
 import time
 from dataclasses import dataclass
@@ -26,9 +27,9 @@ PROJECT_DIR = DEMO_DIR.parent
 ASSET_DIR = DEMO_DIR / "assets"
 MODEL_PATH = PROJECT_DIR / "resources" / "pose_models" / "yolov8n-pose.pt"
 SAMPLE_VIDEO = PROJECT_DIR / "resources" / "videos" / "dance_example_1.mp4"
-YOLO_CONFIG_DIR = DEMO_DIR / ".yolo_config"
-YOLO_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-os.environ.setdefault("YOLO_CONFIG_DIR", str(YOLO_CONFIG_DIR))
+YOLO_CONFIG_PATH = Path(tempfile.gettempdir()) / "visual-computing-yolo"
+YOLO_CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("YOLO_CONFIG_DIR", str(YOLO_CONFIG_PATH))
 if str(DEMO_DIR) not in sys.path:
     sys.path.insert(0, str(DEMO_DIR))
 

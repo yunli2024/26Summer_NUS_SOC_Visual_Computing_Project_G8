@@ -1,48 +1,90 @@
-# Bonus Mario - 摄像头姿态控制平台游戏
+# Bonus Mario：摄像头姿态控制平台游戏
 
-这是 Zhangyx 分支的独立创意扩展。它不替代 PDF 要求的 Just Dance
-双面板应用，而是在同一套 YOLOv8 Pose 人体关键点能力之上增加平台游戏。
+本目录整合了 Zhangyx Part Three 中 `bonus_level/mario_demo` 的完整 Mario
+扩展，并继续作为独立程序运行。它不替代课程要求的 Just Dance 双面板应用。
 
-## 关键能力
-
-- 只需肩、肘、腕等上半身关键点，下半身出画仍可操作。
-- 单手向左/右控制移动，双手举起跳跃，双手靠拢触发下蹲。
-- 连续帧确认、滞回和落地动作缓冲，抑制关键点抖动造成的误触。
-- 完整横版关卡、金币、砖块、管道、敌人、检查点、生命和终点。
-- 自带原创像素素材与音效，并保留键盘备用操作。
-
-共享资源：
+程序复用项目公共资源：
 
 ```text
 VisualComputingProject/resources/pose_models/yolov8n-pose.pt
 VisualComputingProject/resources/videos/dance_example_1.mp4
 ```
 
+姿态检测及骨架绘制使用本目录的 `pose_analyzer.py`，不会依赖
+`bonus_level/mario_demo` 中的文件。
+
+## 手势控制
+
+当前版本只使用肩膀、手肘和手腕，不要求下半身进入画面：
+
+- 向画面左侧举起或伸出一只手：人物向左跑。
+- 向画面右侧举起或伸出一只手：人物向右跑。
+- 双手同时举过肩膀：人物跳跃。
+- 双手在胸前靠拢：人物下蹲。
+- 双手自然放下：回到 `NEUTRAL`。
+
+手势需要连续多帧确认，并包含中值滤波、滞回和落地前跳跃缓冲，用于减少
+关键点抖动、误触和落地瞬间丢失跳跃指令。
+
+## 游戏内容
+
+- 完整滚动平台关卡、金币、砖块、管道、坑洞和终点。
+- 移动平台、敌人、强化蘑菇、检查点、生命、分数和计时。
+- 支持人物朝向、空中水平惯性、单向浮空平台和碰撞反馈。
+- 使用项目自带的原创像素素材和 WAV 音效。
+- 保留键盘备用操作。
+
 ## 运行
 
-在仓库根目录执行：
+在项目根目录执行：
 
 ```powershell
-python VisualComputingProject/bonus_level_mario/mario_camera_demo.py --check
-python VisualComputingProject/bonus_level_mario/mario_camera_demo.py
+conda activate vc_sws3026
+python VisualComputingProject\bonus_level_mario\mario_camera_demo.py --check
+python VisualComputingProject\bonus_level_mario\mario_camera_demo.py
 ```
 
-打开界面后点击 `Start Camera`。摄像头不是 0 号时：
+也可以使用根目录入口：
 
 ```powershell
-python VisualComputingProject/bonus_level_mario/mario_camera_demo.py --camera 1
+.\run_mario.ps1 --check
+.\run_mario.ps1
 ```
 
-CPU 推理较慢时可使用 `--image-size 256`。
-
-键盘备用操作：`A/D` 或左右方向键移动，`Space/W/上` 跳跃，
-`S/下` 下蹲，`R` 重开。
-
-## 验证
+GUI 打开后点击 `Start Camera`。如果摄像头不是 0 号：
 
 ```powershell
-python -m unittest discover -s VisualComputingProject/bonus_level_mario -p "test_*.py" -v
-python VisualComputingProject/bonus_level_mario/mario_camera_demo.py --check
+.\run_mario.ps1 --camera 1
 ```
 
-`--check` 会读取共享视频并运行一次 YOLO/主舞者/手势链路，不打开 GUI。
+CPU 推理较慢时：
+
+```powershell
+.\run_mario.ps1 --image-size 256
+```
+
+键盘备用操作：
+
+- `A/D` 或 `←/→`：左右移动。
+- `Space`、`W` 或 `↑`：跳跃。
+- `S` 或 `↓`：下蹲。
+- `R`：重新开始。
+
+## 测试
+
+```powershell
+python -m unittest discover -s VisualComputingProject\bonus_level_mario -p "test_*.py" -v
+python VisualComputingProject\bonus_level_mario\mario_camera_demo.py --check
+```
+
+如果需要重新生成项目自带的像素素材和音效：
+
+```powershell
+python VisualComputingProject\bonus_level_mario\build_assets.py
+```
+
+## 限制
+
+- YOLOv8 Pose 只有手腕关键点，不识别手指。
+- 肩膀、手肘和手腕需要清晰可见。
+- 当前是单人单关 Demo，没有多人模式和关卡编辑器。

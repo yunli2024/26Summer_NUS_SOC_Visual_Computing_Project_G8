@@ -27,7 +27,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & $pythonExe VisualComputingProject\bonus_level\just_dance_app.py --help
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --check
+& $pythonExe VisualComputingProject\bonus_level_mario\mario_camera_demo.py --check
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $reference = "VisualComputingProject\bonus_level\task2_results\dance_example_1\annotated.mp4"

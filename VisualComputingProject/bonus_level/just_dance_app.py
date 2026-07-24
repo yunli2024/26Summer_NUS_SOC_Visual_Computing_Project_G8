@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 from collections import deque
 import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -23,7 +24,9 @@ import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
-os.environ.setdefault("YOLO_CONFIG_DIR", str(Path(tempfile.gettempdir()) / "visual-computing-yolo"))
+YOLO_CONFIG_PATH = Path(tempfile.gettempdir()) / "visual-computing-yolo"
+YOLO_CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("YOLO_CONFIG_DIR", str(YOLO_CONFIG_PATH))
 
 from ultralytics import YOLO  # noqa: E402
 
@@ -39,6 +42,8 @@ from pose_analyzer import PrimaryDancerTracker, draw_other_people, draw_pose, ex
 DEFAULT_REFERENCE = BASE_DIR / "task2_results" / "dance_example_1" / "annotated.mp4"
 DEFAULT_CACHE = BASE_DIR / "task2_results" / "dance_example_1" / "pose_cache.npz"
 DEFAULT_MODEL = PROJECT_DIR / "resources" / "pose_models" / "yolov8n-pose.pt"
+DEFAULT_SOURCE_VIDEO = PROJECT_DIR / "resources" / "videos" / "dance_example_1.mp4"
+DEFAULT_PREPARE_OUTPUT = BASE_DIR / "task2_results"
 DISPLAY_SIZE = (600, 338)
 
 
@@ -90,6 +95,77 @@ def load_pose_cache(path: Path) -> dict[str, np.ndarray | float]:
     if playback_fps <= 0:
         raise ValueError("Invalid playback FPS in pose cache.")
     return {"points": points, "valid": valid, "playback_fps": playback_fps}
+
+
+def prepare_reference_assets(args: argparse.Namespace) -> bool:
+    """Create the default annotated video and pose cache when they are absent."""
+    reference_ready = args.reference.is_file()
+    cache_ready = args.cache.is_file()
+    force_rebuild = bool(args.rebuild_reference)
+    if reference_ready and cache_ready and not force_rebuild:
+        return False
+
+    using_default_outputs = (
+        args.reference.resolve() == DEFAULT_REFERENCE.resolve()
+        and args.cache.resolve() == DEFAULT_CACHE.resolve()
+    )
+    if not using_default_outputs:
+        missing = [
+            str(path)
+            for path in (args.reference, args.cache)
+            if not path.is_file()
+        ]
+        raise FileNotFoundError(
+            "Custom reference inputs are incomplete:\n"
+            + "\n".join(f"  - {path}" for path in missing)
+            + "\nGenerate them with pose_analyzer.py or use the default paths."
+        )
+    if args.no_auto_prepare and not force_rebuild:
+        missing = [
+            str(path)
+            for path in (args.reference, args.cache)
+            if not path.is_file()
+        ]
+        raise FileNotFoundError(
+            "Dance reference assets are missing and automatic preparation is disabled:\n"
+            + "\n".join(f"  - {path}" for path in missing)
+        )
+    if not DEFAULT_SOURCE_VIDEO.is_file():
+        raise FileNotFoundError(f"Source dance video not found: {DEFAULT_SOURCE_VIDEO}")
+    if not args.model.is_file():
+        raise FileNotFoundError(f"Pose model not found: {args.model}")
+
+    print("Dance reference assets are missing; preparing them now.", flush=True)
+    print("This one-time CPU preprocessing can take several minutes.", flush=True)
+    command = [
+        sys.executable,
+        str(BASE_DIR / "pose_analyzer.py"),
+        str(DEFAULT_SOURCE_VIDEO),
+        "--model",
+        str(args.model),
+        "--output",
+        str(DEFAULT_PREPARE_OUTPUT),
+        "--image-size",
+        str(args.prepare_image_size),
+        "--stride",
+        str(args.prepare_stride),
+        "--contact-every",
+        "120",
+    ]
+    completed = subprocess.run(command, cwd=str(BASE_DIR), check=False)
+    if completed.returncode != 0:
+        raise RuntimeError(
+            "Reference preprocessing failed. Review the pose_analyzer.py output above."
+        )
+    if not args.reference.is_file() or not args.cache.is_file():
+        raise RuntimeError(
+            "Reference preprocessing finished but the expected runtime files were not created:\n"
+            f"  - {args.reference}\n"
+            f"  - {args.cache}"
+        )
+    print(f"Reference video ready: {args.reference}", flush=True)
+    print(f"Pose cache ready: {args.cache}", flush=True)
+    return True
 
 
 class DanceGameApp:
@@ -509,14 +585,17 @@ def validate_inputs(args: argparse.Namespace) -> int:
     if not video.isOpened():
         raise RuntimeError(f"Could not open reference video: {args.reference}")
     video_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_ok, sample_frame = video.read()
-    video.release()
     if not args.model.is_file():
+        video.release()
         raise FileNotFoundError(f"Model not found: {args.model}")
     usable = np.flatnonzero(np.count_nonzero(valid[:, 5:17], axis=1) >= 4)
     if usable.size == 0:
+        video.release()
         raise RuntimeError("No scoreable pose exists in the reference cache.")
     index = int(usable[0])
+    video.set(cv2.CAP_PROP_POS_FRAMES, index)
+    frame_ok, sample_frame = video.read()
+    video.release()
     match = best_reference_match(points[index], valid[index], points, valid, index, 0)
     if not frame_ok:
         raise RuntimeError("Could not decode a frame from the reference video.")
@@ -555,6 +634,33 @@ def parse_args() -> argparse.Namespace:
         help="Seconds of player/reference history used for motion scoring",
     )
     parser.add_argument("--no-mirror", action="store_true", help="Require anatomical left/right to match exactly")
+    parser.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="Prepare default reference files when needed, then exit without opening the GUI",
+    )
+    parser.add_argument(
+        "--rebuild-reference",
+        action="store_true",
+        help="Regenerate the default annotated video and pose cache",
+    )
+    parser.add_argument(
+        "--no-auto-prepare",
+        action="store_true",
+        help="Fail instead of generating missing default reference files",
+    )
+    parser.add_argument(
+        "--prepare-stride",
+        type=int,
+        default=2,
+        help="Process every Nth reference frame during one-time preparation (default: 2)",
+    )
+    parser.add_argument(
+        "--prepare-image-size",
+        type=int,
+        default=416,
+        help="YOLO image size used during one-time reference preparation",
+    )
     parser.add_argument("--check", action="store_true", help="Validate files and scoring without opening the GUI")
     return parser.parse_args()
 
@@ -564,6 +670,12 @@ def main() -> int:
     try:
         if args.max_lag < 0.0 or args.motion_window <= 0.0:
             raise ValueError("--max-lag must be non-negative and --motion-window must be positive.")
+        if args.prepare_stride < 1 or args.prepare_image_size < 160:
+            raise ValueError("--prepare-stride must be at least 1 and --prepare-image-size at least 160.")
+        prepare_reference_assets(args)
+        if args.prepare_only:
+            print("Dance reference preparation completed.")
+            return 0
         if args.check:
             return validate_inputs(args)
         import tkinter as tk
