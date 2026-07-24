@@ -1,31 +1,28 @@
 # Visual Computing Project 运行指南
 
-本指南适用于 Windows PowerShell，覆盖以下程序：
+本指南适用于当前合并版本：
 
-- Beginner Level：实时人脸框与 68 点 facial landmarks
-- Expert Level：keypoint-only 表情分类训练、评估与实时特效
-- Bonus Level：Just Dance 双面板姿态检测、时序对齐与评分
-- Bonus Action Game：摄像头姿态控制的 3D Runner
-- Bonus Mario：摄像头姿态控制的平台游戏
-- 辅助检查、单元测试和离线姿态分析
+- Beginner：本地 Haar + LBF 68 点实时检测；
+- Expert：Zhangyx `part two`；
+- Bonus：Zhangyx `part three`；
+- Bonus 扩展：Part Three Mario、原独立 Mario、3D Runner。
 
-所有命令都应在项目根目录运行。不要在 Google Colab 或 Jupyter Notebook
-中运行 webcam/GUI 程序。
+所有 webcam/GUI 程序必须在本地 PowerShell 中运行，不要使用 Google Colab
+或 Jupyter Notebook。
 
 ## 1. 进入项目根目录
-
-本机当前路径：
 
 ```powershell
 cd D:\AAA_SHERRY\NUS_school_computing_summer_workshop\VisualComputingProjects\project
 ```
 
-如果从 GitHub 重新克隆，请先进入包含 `VisualComputingProject`、
-`environment_setup` 和 `run_*.ps1` 的目录。
+后续命令默认都从这个目录执行。
 
-## 2. 第一次运行：安装环境
+## 2. 创建和激活环境
 
-### 方案 A：Conda（推荐）
+### Conda（推荐）
+
+第一次运行：
 
 ```powershell
 conda env create -f environment_setup\environment.yml
@@ -34,13 +31,13 @@ python -m pip install --upgrade pip
 python -m pip install -r environment_setup\requirements.txt
 ```
 
-以后每次打开新的 PowerShell，只需执行：
+以后打开新的 PowerShell：
 
 ```powershell
 conda activate vc_sws3026
 ```
 
-### 方案 B：普通 Python 3.11
+### 普通 Python 3.11
 
 ```powershell
 py -3.11 -m venv .venv
@@ -49,87 +46,94 @@ python -m pip install --upgrade pip
 python -m pip install -r environment_setup\requirements.txt
 ```
 
-项目需要 `opencv-contrib-python`，因为 LBF facial landmarks 使用
-`cv2.face`。不要同时保留普通版 `opencv-python` 和
-`opencv-contrib-python`。
+### 安装 Zhangyx Part Two/Three 的精确依赖
 
-检查环境：
+Part Two：
 
 ```powershell
-python --version
+python -m pip install -r VisualComputingProject\expert_level\requirements.txt
+```
+
+Part Three 建议保留 `opencv-contrib-python`，再安装 Ultralytics：
+
+```powershell
+python -m pip install -r VisualComputingProject\bonus_level\requirements.txt
+python -m pip install ultralytics==8.4.98 --no-deps
+```
+
+项目需要 `cv2.face`，所以必须使用 `opencv-contrib-python`。检查：
+
+```powershell
 python -c "import cv2; print(cv2.__version__); print('cv2.face:', hasattr(cv2, 'face'))"
 ```
 
-第二行应显示 `cv2.face: True`。
+最后应显示：
 
-### PowerShell 禁止运行 `.ps1` 时
+```text
+cv2.face: True
+```
 
-只对当前 PowerShell 窗口临时放行：
+## 3. PowerShell 脚本执行权限
+
+如果 `.\run_*.ps1` 被系统阻止，只对当前窗口临时放行：
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 ```
 
-然后再运行本指南中的 `.\run_*.ps1` 命令。
+## 4. 必需资源
 
-## 3. 运行前必须确认的资源
-
-以下两个大文件不会上传到 GitHub，但 Beginner/Expert 会在本地使用：
-
-| 文件 | 准确路径 | 用途 |
+| Resource | Local path | GitHub |
 | --- | --- | --- |
-| `lbfmodel.yaml` | `VisualComputingProject\resources\face_models\lbfmodel.yaml` | Beginner、Expert 的 68 点 LBF |
-| `facial_expression_dataset.zip` | `VisualComputingProject\resources\expression_data\facial_expression_dataset.zip` | Expert 重新训练和完整数据检查 |
+| Haar cascade | `VisualComputingProject\resources\face_models\haarcascade_frontalface_default.xml` | included |
+| YuNet | `VisualComputingProject\resources\face_models\face_detection_yunet_2023mar.onnx` | included |
+| LBF model | `VisualComputingProject\resources\face_models\lbfmodel.yaml` | excluded because large |
+| FER dataset ZIP | `VisualComputingProject\resources\expression_data\facial_expression_dataset.zip` | excluded because large |
+| Extracted FER | `VisualComputingProject\resources\expression_data\facial_expression_dataset\train` and `test` | local only |
+| YOLOv8 Pose | `VisualComputingProject\resources\pose_models\yolov8n-pose.pt` | included |
+| Dance video | `VisualComputingProject\resources\videos\dance_example_1.mp4` | included |
 
-从 GitHub 新克隆项目后，需要从课程资料或现有本地项目中恢复到上述路径。
-详细说明见 `VisualComputingProject\resources\README.md`。
-
-检查文件是否存在：
+检查：
 
 ```powershell
 Test-Path VisualComputingProject\resources\face_models\lbfmodel.yaml
-Test-Path VisualComputingProject\resources\expression_data\facial_expression_dataset.zip
+Test-Path VisualComputingProject\resources\expression_data\facial_expression_dataset\train
+Test-Path VisualComputingProject\resources\expression_data\facial_expression_dataset\test
 Test-Path VisualComputingProject\resources\pose_models\yolov8n-pose.pt
-Test-Path VisualComputingProject\expert_level\models\keypoint\current\expression_classifier.joblib
+Test-Path VisualComputingProject\resources\videos\dance_example_1.mp4
 ```
 
-四条命令应尽量全部返回 `True`。其中 FER ZIP 只影响 Expert 训练，不影响
-Bonus 和 Mario。
+从 GitHub 新克隆后，需要从课程资料恢复 LBF 与 FER 数据。
 
-## 4. Beginner Level：实时 facial landmarks
+## 5. Beginner Level
 
-### 4.1 不打开摄像头的环境检查
+### 5.1 无摄像头检查
 
 ```powershell
 python VisualComputingProject\beginner_level\tests\check_part2_setup.py
 ```
 
-它会检查 OpenCV、Haar cascade、LBF 模型和相关模块。
-
-### 4.2 运行主程序
+### 5.2 运行实时 landmarks
 
 ```powershell
 .\run_beginner_level.ps1
 ```
 
-等价的 Python 命令：
+等价命令：
 
 ```powershell
 python VisualComputingProject\beginner_level\main.py
 ```
 
-程序会打开摄像头，显示 face bounding box、68 个 landmarks、检测状态和
-FPS。
+### 5.3 常用参数
 
-### 4.3 常用参数
-
-使用 CLAHE 改善不均匀光照：
+CLAHE：
 
 ```powershell
 .\run_beginner_level.ps1 --preprocess clahe
 ```
 
-使用 CLAHE 与 gamma 组合：
+CLAHE + gamma：
 
 ```powershell
 .\run_beginner_level.ps1 --preprocess clahe-gamma
@@ -141,149 +145,277 @@ FPS。
 .\run_beginner_level.ps1 --camera 1
 ```
 
-只跟踪一个最稳定的人脸：
+单人稳定跟踪：
 
 ```powershell
 .\run_beginner_level.ps1 --single-face
 ```
 
-### 4.4 运行时按键
+### 5.4 运行时按键
 
-- `1`：raw preprocessing
+- `1`：raw
 - `2`：CLAHE
 - `3`：gamma
 - `4`：CLAHE + gamma
-- `v`：切换显示画面增强
-- `m`：切换镜像方向
-- `r`：重置检测器状态
-- `q`：退出并释放摄像头
+- `v`：切换画面增强
+- `m`：切换镜像
+- `r`：重置 tracker
+- `q`：退出
 
-## 5. Expert Level：表情分类与实时特效
+## 6. Expert Level - Zhangyx Part Two
 
-Expert 分类器只使用 facial keypoints 及其几何特征，不使用完整人脸图像。
+Expert 主目录：
 
-### 5.1 检查数据、模型和历史指标
+```text
+VisualComputingProject\expert_level\
+```
+
+主要程序：
+
+- `task1_pipeline.py`：特征提取、训练和评估；
+- `tune_svm.py`：SVM validation search；
+- `ablate_geometry_groups.py`：几何特征消融；
+- `task2_realtime.py`：webcam 表情分类和特效；
+- `test_expression_features.py`：特征单元测试。
+
+### 6.1 检查命令和特征测试
 
 ```powershell
-.\run_expert_level.ps1 inspect
+python VisualComputingProject\expert_level\task1_pipeline.py --help
+python VisualComputingProject\expert_level\task2_realtime.py --help
+python VisualComputingProject\expert_level\test_expression_features.py
+```
+
+### 6.2 快速训练 smoke test
+
+使用每类 50 train、20 test，输出到临时实验目录，不覆盖正式模型：
+
+```powershell
+python VisualComputingProject\expert_level\task1_pipeline.py `
+  --max-train-per-class 50 `
+  --max-test-per-class 20 `
+  --output VisualComputingProject\expert_level\artifacts_smoke
+```
+
+### 6.3 完整 HGB pipeline
+
+```powershell
+python VisualComputingProject\expert_level\task1_pipeline.py `
+  --output VisualComputingProject\expert_level\artifacts_retrain
+```
+
+程序会：
+
+1. 读取共享 FER `train`/`test`；
+2. 将 48x48 图像放大到 192x192；
+3. 用 centered FER crop 拟合 LBF；
+4. 眼中心对齐为 136 coordinates；
+5. 训练 class-balanced HGB；
+6. 输出 metrics、confusion matrix 和 failure cases。
+
+### 6.4 只使用缓存重新训练
+
+首次 extraction 后：
+
+```powershell
+python VisualComputingProject\expert_level\task1_pipeline.py `
+  --stage train `
+  --features VisualComputingProject\expert_level\artifacts_retrain\fer_landmark_features.npz `
+  --output VisualComputingProject\expert_level\artifacts_retrain
+```
+
+`fer_landmark_features.npz` 是本地生成缓存，不会上传 GitHub。
+
+### 6.5 PCA-SVM 对照实验
+
+```powershell
+python VisualComputingProject\expert_level\task1_pipeline.py `
+  --stage train `
+  --classifier svm `
+  --pca-variance 0.95 `
+  --features VisualComputingProject\expert_level\artifacts_retrain\fer_landmark_features.npz `
+  --output VisualComputingProject\expert_level\artifacts_pca_retrain
+```
+
+### 6.6 调参 coordinate SVM
+
+```powershell
+python VisualComputingProject\expert_level\tune_svm.py `
+  --features VisualComputingProject\expert_level\artifacts_retrain\fer_landmark_features.npz `
+  --output VisualComputingProject\expert_level\artifacts_svm_tuned_retrain
+```
+
+### 6.7 调参 geometry SVM
+
+```powershell
+python VisualComputingProject\expert_level\tune_svm.py `
+  --geometry `
+  --features VisualComputingProject\expert_level\artifacts_retrain\fer_landmark_features.npz `
+  --output VisualComputingProject\expert_level\artifacts_svm_geometry_retrain
+```
+
+正式集成模型已经存在：
+
+```text
+VisualComputingProject\expert_level\artifacts_svm_geometry\expression_classifier.joblib
+```
+
+不要在没有比较 Macro-F1、failure cases 和 latency 前覆盖它。
+
+### 6.8 生成无摄像头特效预览
+
+```powershell
+python VisualComputingProject\expert_level\task2_realtime.py `
+  --preview tmp\expert_effects_preview.png
+```
+
+### 6.9 运行 webcam 表情特效
+
+```powershell
+.\run_expert_level.ps1
 ```
 
 等价命令：
 
 ```powershell
-python VisualComputingProject\expert_level\main.py inspect
-```
-
-如果 FER ZIP 没有恢复，`inspect` 会报告 dataset `MISSING`；实时 demo 仍可在
-LBF 模型和最终分类器存在时运行。
-
-### 5.2 运行实时表情特效
-
-推荐命令：
-
-```powershell
-.\run_expert_level.ps1 demo --mirror
-```
-
-它默认使用 YuNet 检测人脸、LBF 提取 68 点、Geometry-SVM 分类表情，并根据
-表情显示动态特效。
-
-使用 Haar detector 做对照：
-
-```powershell
-.\run_expert_level.ps1 demo --mirror --detector haar
+python VisualComputingProject\expert_level\task2_realtime.py
 ```
 
 第二个摄像头：
 
 ```powershell
-.\run_expert_level.ps1 demo --mirror --camera-index 1
+.\run_expert_level.ps1 --camera 1
 ```
 
-关闭视觉特效，只看 landmarks 和分类结果：
+降低分辨率：
 
 ```powershell
-.\run_expert_level.ps1 demo --mirror --no-effects
+.\run_expert_level.ps1 --width 640 --height 480
 ```
 
-CPU 较慢时降低摄像头分辨率：
+关闭特效：
 
 ```powershell
-.\run_expert_level.ps1 demo --mirror --width 640 --height 360
+.\run_expert_level.ps1 --effects-off
 ```
 
-### 5.3 Demo 运行时按键
+### 6.10 Expert 运行时按键
 
-- `s`：保存当前截图到 `VisualComputingProject\expert_level\snapshots\`
-- `q` 或 `Esc`：退出
+- `E`：切换 expression effects
+- `L`：切换 landmarks
+- `S`：切换 temporal smoothing
+- `C`：切换 CLAHE
+- `Q` 或 `Esc`：退出
 
-### 5.4 测量实时延迟
+## 7. Bonus Task 1 - Zhangyx Part Three Pose Analysis
 
-下面命令处理 300 帧但不打开显示窗口，并输出 FPS、pipeline latency 和
-单次分类 latency：
+主程序：
+
+```text
+VisualComputingProject\bonus_level\pose_analyzer.py
+```
+
+### 7.1 查看参数
 
 ```powershell
-.\run_expert_level.ps1 demo --benchmark-frames 300 --warmup-frames 10
+python VisualComputingProject\bonus_level\pose_analyzer.py --help
 ```
 
-目标是单次 expression prediction 接近或低于 30 ms。
-
-### 5.5 快速验证训练流程
-
-快速训练会使用少量样本。下面命令把实验模型写入单独目录，不覆盖当前正式
-demo 模型：
+### 7.2 分析 60 帧示例，不写 MP4
 
 ```powershell
-.\run_expert_level.ps1 train `
-  --max-train-per-class 100 `
-  --max-test-per-class 50 `
-  --cv-folds 3 `
-  --workers 1 `
-  --model-out VisualComputingProject\expert_level\models\keypoint\experiments\quick_classifier.joblib `
-  --report-dir VisualComputingProject\expert_level\results\quick_check `
-  --cache-dir VisualComputingProject\expert_level\data\cache_quick
+python VisualComputingProject\bonus_level\pose_analyzer.py `
+  --start-frame 300 `
+  --max-frames 60 `
+  --stride 3 `
+  --image-size 416 `
+  --no-video `
+  --output tmp\bonus_task1_check
 ```
 
-### 5.6 完整正式训练
-
-完整训练会读取 FER ZIP 中已有的 `train`/`test`，在 train split 内进行
-Stratified K-fold 与 PCA 候选模型比较，最后只在 test split 评估一次。
-
-为避免覆盖当前正式模型，先输出到 candidate 路径：
+### 7.3 显示分析过程
 
 ```powershell
-.\run_expert_level.ps1 train `
-  --cv-folds 5 `
-  --workers 1 `
-  --model-out VisualComputingProject\expert_level\models\keypoint\experiments\candidate_classifier.joblib `
-  --report-dir VisualComputingProject\expert_level\results\candidate_cv `
-  --cache-dir VisualComputingProject\expert_level\data\cache
+python VisualComputingProject\bonus_level\pose_analyzer.py `
+  --start-frame 300 `
+  --max-frames 60 `
+  --stride 3 `
+  --show `
+  --output tmp\bonus_task1_show
 ```
 
-Windows 首次训练建议先使用 `--workers 1`。确认稳定后，可改为
-`--workers 2` 或 `--workers 4`。完整 landmark extraction 在 CPU 上可能需要
-较长时间。
+显示窗口按 `Q` 或 `Esc` 退出。
 
-训练报告包括：
-
-- `cross_validation.csv/json`
-- `expert_metrics.json`
-- `confusion_matrix.csv`
-- `misclassification_cases.csv`
-- `extraction_failures.csv`
-
-## 6. Bonus Level：Just Dance 双面板评分
-
-### 6.1 不打开 GUI 的资源和评分配置检查
+### 7.4 分析指定 TikTok 视频
 
 ```powershell
-.\run_bonus_level.ps1 --check
+python VisualComputingProject\bonus_level\pose_analyzer.py `
+  "D:\path\to\TikTok\YouTube.mp4" `
+  --max-frames 60 `
+  --stride 3 `
+  --output tmp\tiktok_pose_check
 ```
 
-它会检查 YOLOv8 Pose 模型、默认舞蹈视频，并显示空间归一化、时间对齐窗口和
-评分权重。
+不要求运行完整 TikTok dataset。Presentation 应挑选单人和多人案例比较。
 
-### 6.2 打开主程序
+## 8. Bonus Task 2 - 生成 reference cache
+
+Just Dance 运行前必须生成：
+
+- annotated reference MP4；
+- `pose_cache.npz`。
+
+执行：
+
+```powershell
+python VisualComputingProject\bonus_level\pose_analyzer.py `
+  VisualComputingProject\resources\videos\dance_example_1.mp4 `
+  --start-frame 300 `
+  --max-frames 300 `
+  --stride 3 `
+  --image-size 416 `
+  --contact-every 60 `
+  --output VisualComputingProject\bonus_level\task2_results
+```
+
+预期生成：
+
+```text
+VisualComputingProject\bonus_level\task2_results\dance_example_1\annotated.mp4
+VisualComputingProject\bonus_level\task2_results\dance_example_1\pose_cache.npz
+```
+
+这两个运行产物不会上传 GitHub，新 clone 需要重新生成。
+
+CPU 较慢时先用 30 帧验证：
+
+```powershell
+python VisualComputingProject\bonus_level\pose_analyzer.py `
+  VisualComputingProject\resources\videos\dance_example_1.mp4 `
+  --start-frame 300 `
+  --max-frames 30 `
+  --stride 3 `
+  --image-size 320 `
+  --output tmp\bonus_task2_smoke
+```
+
+## 9. Bonus Task 2 - Just Dance GUI
+
+### 9.1 评分单元测试
+
+```powershell
+python VisualComputingProject\bonus_level\test_dance_scoring.py
+```
+
+### 9.2 无 webcam 输入检查
+
+生成正式 cache 后：
+
+```powershell
+python VisualComputingProject\bonus_level\just_dance_app.py --check
+```
+
+### 9.3 启动游戏
 
 ```powershell
 .\run_bonus_level.ps1
@@ -292,221 +424,214 @@ Windows 首次训练建议先使用 `--workers 1`。确认稳定后，可改为
 等价命令：
 
 ```powershell
-python VisualComputingProject\bonus_level\main.py
+python VisualComputingProject\bonus_level\danceapp.py
 ```
 
-### 6.3 GUI 操作顺序
+CPU 较慢：
 
-1. 左侧默认使用 `dance_example_1.mp4`；也可以点击 `Open` 选择其他视频。
-2. 点击左侧 `Start` 播放 reference video。
-3. 随后点击右侧 `Start Webcam`。
-4. 让全身或主要身体关节进入画面，并跟随左侧舞者。
-5. 屏幕会显示 `Perfect`、`Super`、`Good`、`Miss`、combo、总分和 delay。
-6. 可用 `Pause`、`Resume`、`Restart` 控制参考视频。
-7. 点击 `Show Summary` 查看平均分、最佳分和 delay 统计。
-8. 关闭窗口时程序会停止线程并释放视频与摄像头。
+```powershell
+.\run_bonus_level.ps1 --image-size 320
+```
 
-推荐先单独启动左侧检查 pose skeleton，再启动 webcam 进行双面板评分。
+第二个摄像头：
 
-## 7. Bonus Action Game：3D Runner
+```powershell
+.\run_bonus_level.ps1 --camera 1
+```
 
-### 7.1 启动游戏
+不接受镜像动作：
+
+```powershell
+.\run_bonus_level.ps1 --no-mirror
+```
+
+调整 delay 与 motion window：
+
+```powershell
+.\run_bonus_level.ps1 --max-lag 0.5 --motion-window 0.3
+```
+
+### 9.4 GUI 操作
+
+- `Start / Restart`：启动 webcam 并重置分数
+- `Pause / Resume`：冻结/恢复游戏时钟和 inference
+- `Stop`：停止本轮但保留 GUI
+- `Accept mirrored moves`：允许左右镜像动作
+
+屏幕会显示：
+
+- similarity；
+- `PERFECT / GREAT / GOOD / MISS`；
+- `SYNC / HOLD / MOVE!`；
+- points、average、combo；
+- selected lag、mirror、motion activity。
+
+## 10. Scoring A/B Tester
+
+先生成正式 Task 2 cache，然后运行：
+
+```powershell
+python VisualComputingProject\bonus_level\scoring_video_tester.py
+```
+
+它用同一个 cached video 模拟 reference/player，可调：
+
+- player delay；
+- allowed reaction lag；
+- mirror player；
+- accept mirrored moves。
+
+Headless deterministic check：
+
+```powershell
+python VisualComputingProject\bonus_level\scoring_video_tester.py --check
+```
+
+## 11. Part Three Mario Demo
+
+这是 Zhangyx Part Three 内附的 Mario 扩展：
+
+```powershell
+python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --check
+python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py
+```
+
+GUI 打开后点击 `Start Camera`。
+
+第二个摄像头：
+
+```powershell
+python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --camera 1
+```
+
+CPU 较慢：
+
+```powershell
+python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --image-size 256
+```
+
+测试：
+
+```powershell
+python -m unittest discover -s VisualComputingProject\bonus_level\mario_demo -p "test_*.py" -v
+```
+
+## 12. 保留的独立扩展
+
+### 独立 Mario
+
+```powershell
+.\run_mario.ps1 --check
+.\run_mario.ps1
+```
+
+### 3D Runner
 
 ```powershell
 python VisualComputingProject\bonus_level_action_game\main.py
 ```
 
-程序使用 Ursina 打开第三人称 3D 三赛道跑酷，并使用 YOLOv8 Pose 读取
-webcam 姿态。
+键盘备用：
 
-### 7.2 姿态操作
-
-- 身体向左移动：切到左侧赛道
-- 身体向右移动：切到右侧赛道
-- 双手快速举过肩膀：跳跃
-- 双臂在胸前交叉：下滑
-
-### 7.3 键盘备用操作
-
-- `A` / 左方向键：向左
-- `D` / 右方向键：向右
-- `W` / 上方向键：跳跃
-- `S` / 下方向键：下滑
+- `A/D` 或左右方向键：换赛道
+- `W` 或上方向键：跳跃
+- `S` 或下方向键：下滑
 - `C`：重新校准
-- `R`：Game Over 后重新开始
+- `R`：重开
 - `Esc`：退出
 
-摄像头编号和动作阈值位于：
-
-```text
-VisualComputingProject\bonus_level_action_game\src\config.py
-```
-
-默认值为 `RUNNER_CAMERA_INDEX = 0`。如果摄像头不可用，游戏仍可使用键盘。
-
-## 8. Bonus Mario：姿态控制平台游戏
-
-### 8.1 先执行无 GUI 检查
-
-```powershell
-.\run_mario.ps1 --check
-```
-
-该命令会读取共享参考视频的一帧，检查 YOLO 模型、主舞者选择、手势控制链路
-和游戏素材。
-
-### 8.2 启动游戏
-
-```powershell
-.\run_mario.ps1
-```
-
-等价命令：
-
-```powershell
-python VisualComputingProject\bonus_level_mario\mario_camera_demo.py
-```
-
-GUI 打开后点击 `Start Camera`。
-
-使用第二个摄像头：
-
-```powershell
-.\run_mario.ps1 --camera 1
-```
-
-CPU 推理较慢时：
-
-```powershell
-.\run_mario.ps1 --image-size 256
-```
-
-### 8.3 操作
-
-- 单手向左或向右：移动
-- 双手举起：跳跃
-- 双手靠拢：下蹲
-- `A` / `D` 或左右方向键：键盘移动
-- `Space` / `W` / 上方向键：键盘跳跃
-- `S` / 下方向键：键盘下蹲
-- `R`：重新开始
-
-## 9. 可选：离线视频姿态分析
-
-使用默认舞蹈视频：
-
-```powershell
-python VisualComputingProject\bonus_level_mario\pose_analyzer.py --max-frames 300
-```
-
-分析指定视频并显示过程：
-
-```powershell
-python VisualComputingProject\bonus_level_mario\pose_analyzer.py "D:\path\to\video.mp4" `
-  --max-frames 300 `
-  --show
-```
-
-输出默认保存在：
-
-```text
-VisualComputingProject\bonus_level_mario\task1_results\
-```
-
-显示窗口中按 `q` 或 `Esc` 可以提前结束。
-
-## 10. 一次性检查合并项目
-
-不打开正式 webcam GUI 的综合检查：
+## 13. 综合检查
 
 ```powershell
 .\check_merge.ps1
 ```
 
-它会依次检查 Beginner setup、Expert 特征与稳定性测试、Bonus 时间对齐测试、
-Mario 测试、Expert 资源、Bonus 资源和 Mario validation。
+它会检查：
 
-注意：该命令要求 LBF、FER ZIP、最终分类器、YOLO 模型和参考视频全部存在。
+- Beginner setup；
+- Part Two expression features；
+- Part Three scoring tests；
+- Part Two CLI 和 effect preview；
+- Part Three CLI；
+- Part Three Mario validation；
+- 如果正式 Bonus cache 已生成，再执行 Just Dance input check。
 
-## 11. 分模块运行测试
+不会自动打开 webcam。
 
-Beginner：
-
-```powershell
-python VisualComputingProject\beginner_level\tests\check_part2_setup.py
-```
-
-Expert：
-
-```powershell
-python VisualComputingProject\expert_level\tests\test_keypoint_features.py
-python VisualComputingProject\expert_level\tests\test_realtime_stability.py
-```
-
-Bonus：
-
-```powershell
-python -m unittest discover -s VisualComputingProject\bonus_level\tests -p "test_*.py" -v
-```
-
-Mario：
-
-```powershell
-python -m unittest discover -s VisualComputingProject\bonus_level_mario -p "test_*.py" -v
-```
-
-## 12. 常见问题
+## 14. 常见错误
 
 ### `cv2 has no attribute face`
 
-当前环境安装了错误的 OpenCV 版本。执行：
-
 ```powershell
 python -m pip uninstall -y opencv-python opencv-contrib-python
-python -m pip install opencv-contrib-python
+python -m pip install opencv-contrib-python==4.12.0.88
 ```
 
-### `lbfmodel.yaml` 或 FER ZIP 找不到
+### `lbfmodel.yaml` 找不到
 
-它们因体积较大没有上传 GitHub。按照第 3 节恢复到准确路径，不要修改文件名。
+恢复到：
+
+```text
+VisualComputingProject\resources\face_models\lbfmodel.yaml
+```
+
+### FER class directory 找不到
+
+需要：
+
+```text
+VisualComputingProject\resources\expression_data\facial_expression_dataset\train\<class>
+VisualComputingProject\resources\expression_data\facial_expression_dataset\test\<class>
+```
+
+七类：
+
+```text
+angry disgust fear happy neutral sad surprise
+```
+
+### Bonus 报 `pose_cache.npz` 找不到
+
+先执行第 8 节生成 reference cache。
 
 ### 摄像头打不开
 
-先关闭 Teams、Zoom、浏览器摄像头页面和其他 OpenCV 程序，然后尝试：
+关闭 Teams、Zoom、浏览器摄像头页面和其他 OpenCV 程序，然后尝试 camera 1：
 
 ```powershell
 .\run_beginner_level.ps1 --camera 1
-.\run_expert_level.ps1 demo --mirror --camera-index 1
-.\run_mario.ps1 --camera 1
+.\run_expert_level.ps1 --camera 1
+.\run_bonus_level.ps1 --camera 1
 ```
 
-### PowerShell 报脚本被禁止
+### YOLO 很慢
+
+- 使用 `--image-size 320` 或 `256`；
+- 关闭其他 CPU/GPU 程序；
+- reference side 使用预生成 cache；
+- 不要同时运行多个 webcam demo。
+
+### PowerShell 拒绝 `.ps1`
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 ```
 
-### YOLO/GUI 很慢
-
-- 关闭其他占用 CPU/GPU 的程序。
-- Mario 使用 `--image-size 256`。
-- Expert 将摄像头分辨率降到 `640x360`。
-- 保证画面中只有一位主要玩家，并保持充足光照。
-
-### 退出后摄像头仍被占用
-
-优先使用程序提供的 `q`、`Esc`、Stop 按钮或关闭 GUI 窗口。不要直接终止整个
-IDE；正常退出会调用 `release()` 并关闭窗口。
-
-## 13. Demo Day 推荐启动顺序
+## 15. Demo Day 启动顺序
 
 ```powershell
 conda activate vc_sws3026
 .\run_beginner_level.ps1 --preprocess clahe
-.\run_expert_level.ps1 demo --mirror
-.\run_bonus_level.ps1
-.\run_mario.ps1
+.\run_expert_level.ps1
+.\run_bonus_level.ps1 --image-size 320
+```
+
+可选扩展：
+
+```powershell
+python VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py
 python VisualComputingProject\bonus_level_action_game\main.py
 ```
 
-一次只运行一个需要 webcam 的程序，退出并确认摄像头释放后，再启动下一个。
+一次只运行一个 webcam 程序。使用 `Q`、`Esc`、Stop 或关闭 GUI 正常退出，
+确认 camera 已释放后再启动下一个。

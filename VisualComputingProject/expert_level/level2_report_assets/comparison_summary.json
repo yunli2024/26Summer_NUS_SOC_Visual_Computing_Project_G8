@@ -1,0 +1,507 @@
+{
+  "test_samples": 7178,
+  "correct_counts": {
+    "HGB": 3096,
+    "SVM": 3324,
+    "PCA-SVM": 2894,
+    "Tuned-SVM": 3362,
+    "Geometry-SVM": 3396
+  },
+  "consensus_correct": 1809,
+  "all_models_wrong": 2456,
+  "geometry_rescue_count": 458,
+  "geometry_regression_count": 424,
+  "pca_loss_count": 824,
+  "selections": {
+    "consensus_correct": [
+      {
+        "index": 305,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\angry\\PrivateTest_65112072.jpg",
+        "true": "angry",
+        "predictions": {
+          "HGB": "angry",
+          "SVM": "angry",
+          "PCA-SVM": "angry",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 968,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\disgust\\PrivateTest_36724992.jpg",
+        "true": "disgust",
+        "predictions": {
+          "HGB": "disgust",
+          "SVM": "disgust",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "disgust",
+          "Geometry-SVM": "disgust"
+        }
+      },
+      {
+        "index": 1291,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\fear\\PrivateTest_45753030.jpg",
+        "true": "fear",
+        "predictions": {
+          "HGB": "fear",
+          "SVM": "fear",
+          "PCA-SVM": "fear",
+          "Tuned-SVM": "fear",
+          "Geometry-SVM": "fear"
+        }
+      },
+      {
+        "index": 3290,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\happy\\PublicTest_41450041.jpg",
+        "true": "happy",
+        "predictions": {
+          "HGB": "happy",
+          "SVM": "happy",
+          "PCA-SVM": "happy",
+          "Tuned-SVM": "happy",
+          "Geometry-SVM": "happy"
+        }
+      },
+      {
+        "index": 3992,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\neutral\\PrivateTest_28887350.jpg",
+        "true": "neutral",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "neutral",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "neutral"
+        }
+      },
+      {
+        "index": 5962,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PublicTest_47191174.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "sad",
+          "SVM": "sad",
+          "PCA-SVM": "sad",
+          "Tuned-SVM": "sad",
+          "Geometry-SVM": "sad"
+        }
+      },
+      {
+        "index": 7032,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\surprise\\PublicTest_66000374.jpg",
+        "true": "surprise",
+        "predictions": {
+          "HGB": "surprise",
+          "SVM": "surprise",
+          "PCA-SVM": "surprise",
+          "Tuned-SVM": "surprise",
+          "Geometry-SVM": "surprise"
+        }
+      },
+      {
+        "index": 2514,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\happy\\PrivateTest_54479403.jpg",
+        "true": "happy",
+        "predictions": {
+          "HGB": "happy",
+          "SVM": "happy",
+          "PCA-SVM": "happy",
+          "Tuned-SVM": "happy",
+          "Geometry-SVM": "happy"
+        }
+      }
+    ],
+    "geometry_rescues": [
+      {
+        "index": 122,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\angry\\PrivateTest_33031857.jpg",
+        "true": "angry",
+        "predictions": {
+          "HGB": "angry",
+          "SVM": "angry",
+          "PCA-SVM": "angry",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 1763,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\fear\\PublicTest_41849972.jpg",
+        "true": "fear",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "neutral",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "fear"
+        }
+      },
+      {
+        "index": 3455,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\happy\\PublicTest_57583021.jpg",
+        "true": "happy",
+        "predictions": {
+          "HGB": "angry",
+          "SVM": "angry",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "happy"
+        }
+      },
+      {
+        "index": 4990,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\neutral\\PublicTest_85861501.jpg",
+        "true": "neutral",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "angry",
+          "PCA-SVM": "surprise",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "neutral"
+        }
+      },
+      {
+        "index": 6124,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PublicTest_69843457.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "fear",
+          "SVM": "sad",
+          "PCA-SVM": "sad",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "sad"
+        }
+      },
+      {
+        "index": 6658,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\surprise\\PrivateTest_75549401.jpg",
+        "true": "surprise",
+        "predictions": {
+          "HGB": "sad",
+          "SVM": "neutral",
+          "PCA-SVM": "sad",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "surprise"
+        }
+      },
+      {
+        "index": 5295,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PrivateTest_37093219.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "surprise",
+          "SVM": "fear",
+          "PCA-SVM": "fear",
+          "Tuned-SVM": "fear",
+          "Geometry-SVM": "sad"
+        }
+      },
+      {
+        "index": 5741,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PublicTest_17986995.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "surprise",
+          "SVM": "surprise",
+          "PCA-SVM": "surprise",
+          "Tuned-SVM": "fear",
+          "Geometry-SVM": "sad"
+        }
+      }
+    ],
+    "pca_information_loss": [
+      {
+        "index": 872,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\angry\\PublicTest_8668068.jpg",
+        "true": "angry",
+        "predictions": {
+          "HGB": "angry",
+          "SVM": "angry",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 987,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\disgust\\PrivateTest_60490187.jpg",
+        "true": "disgust",
+        "predictions": {
+          "HGB": "disgust",
+          "SVM": "disgust",
+          "PCA-SVM": "sad",
+          "Tuned-SVM": "disgust",
+          "Geometry-SVM": "disgust"
+        }
+      },
+      {
+        "index": 2055,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\fear\\PublicTest_93745770.jpg",
+        "true": "fear",
+        "predictions": {
+          "HGB": "fear",
+          "SVM": "fear",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "fear",
+          "Geometry-SVM": "fear"
+        }
+      },
+      {
+        "index": 2466,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\happy\\PrivateTest_49869263.jpg",
+        "true": "happy",
+        "predictions": {
+          "HGB": "happy",
+          "SVM": "happy",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "happy",
+          "Geometry-SVM": "happy"
+        }
+      },
+      {
+        "index": 4459,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\neutral\\PrivateTest_96531962.jpg",
+        "true": "neutral",
+        "predictions": {
+          "HGB": "disgust",
+          "SVM": "neutral",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "neutral"
+        }
+      },
+      {
+        "index": 6079,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PublicTest_62261424.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "sad",
+          "SVM": "sad",
+          "PCA-SVM": "happy",
+          "Tuned-SVM": "sad",
+          "Geometry-SVM": "sad"
+        }
+      },
+      {
+        "index": 6408,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\surprise\\PrivateTest_20993679.jpg",
+        "true": "surprise",
+        "predictions": {
+          "HGB": "surprise",
+          "SVM": "surprise",
+          "PCA-SVM": "happy",
+          "Tuned-SVM": "surprise",
+          "Geometry-SVM": "surprise"
+        }
+      },
+      {
+        "index": 5443,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PrivateTest_60802329.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "surprise",
+          "SVM": "angry",
+          "PCA-SVM": "happy",
+          "Tuned-SVM": "sad",
+          "Geometry-SVM": "sad"
+        }
+      }
+    ],
+    "geometry_regressions": [
+      {
+        "index": 74,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\angry\\PrivateTest_24139016.jpg",
+        "true": "angry",
+        "predictions": {
+          "HGB": "angry",
+          "SVM": "angry",
+          "PCA-SVM": "angry",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "happy"
+        }
+      },
+      {
+        "index": 1974,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\fear\\PublicTest_78868711.jpg",
+        "true": "fear",
+        "predictions": {
+          "HGB": "fear",
+          "SVM": "fear",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "fear",
+          "Geometry-SVM": "disgust"
+        }
+      },
+      {
+        "index": 2615,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\happy\\PrivateTest_64020153.jpg",
+        "true": "happy",
+        "predictions": {
+          "HGB": "fear",
+          "SVM": "happy",
+          "PCA-SVM": "fear",
+          "Tuned-SVM": "happy",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 4194,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\neutral\\PrivateTest_57965672.jpg",
+        "true": "neutral",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "neutral",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "fear"
+        }
+      },
+      {
+        "index": 5861,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PublicTest_33324770.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "fear",
+          "SVM": "sad",
+          "PCA-SVM": "happy",
+          "Tuned-SVM": "sad",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 7058,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\surprise\\PublicTest_70605143.jpg",
+        "true": "surprise",
+        "predictions": {
+          "HGB": "fear",
+          "SVM": "surprise",
+          "PCA-SVM": "fear",
+          "Tuned-SVM": "surprise",
+          "Geometry-SVM": "fear"
+        }
+      },
+      {
+        "index": 4106,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\neutral\\PrivateTest_46292628.jpg",
+        "true": "neutral",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "neutral",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "fear"
+        }
+      },
+      {
+        "index": 5073,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\neutral\\PublicTest_95967292.jpg",
+        "true": "neutral",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "neutral",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "fear"
+        }
+      }
+    ],
+    "all_models_wrong": [
+      {
+        "index": 82,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\angry\\PrivateTest_25922801.jpg",
+        "true": "angry",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "neutral",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "neutral"
+        }
+      },
+      {
+        "index": 1047,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\disgust\\PublicTest_70868923.jpg",
+        "true": "disgust",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "angry",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 1928,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\fear\\PublicTest_69508371.jpg",
+        "true": "fear",
+        "predictions": {
+          "HGB": "angry",
+          "SVM": "angry",
+          "PCA-SVM": "angry",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 3564,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\happy\\PublicTest_70696031.jpg",
+        "true": "happy",
+        "predictions": {
+          "HGB": "angry",
+          "SVM": "disgust",
+          "PCA-SVM": "sad",
+          "Tuned-SVM": "sad",
+          "Geometry-SVM": "sad"
+        }
+      },
+      {
+        "index": 4474,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\neutral\\PrivateTest_98800994.jpg",
+        "true": "neutral",
+        "predictions": {
+          "HGB": "disgust",
+          "SVM": "happy",
+          "PCA-SVM": "disgust",
+          "Tuned-SVM": "happy",
+          "Geometry-SVM": "happy"
+        }
+      },
+      {
+        "index": 5412,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\sad\\PrivateTest_56424911.jpg",
+        "true": "sad",
+        "predictions": {
+          "HGB": "neutral",
+          "SVM": "neutral",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "neutral"
+        }
+      },
+      {
+        "index": 6568,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\surprise\\PrivateTest_57200649.jpg",
+        "true": "surprise",
+        "predictions": {
+          "HGB": "sad",
+          "SVM": "angry",
+          "PCA-SVM": "sad",
+          "Tuned-SVM": "angry",
+          "Geometry-SVM": "angry"
+        }
+      },
+      {
+        "index": 680,
+        "path": "D:\\d\\南科大\\南科大大二\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset\\test\\angry\\PublicTest_49162234.jpg",
+        "true": "angry",
+        "predictions": {
+          "HGB": "sad",
+          "SVM": "neutral",
+          "PCA-SVM": "neutral",
+          "Tuned-SVM": "neutral",
+          "Geometry-SVM": "neutral"
+        }
+      }
+    ]
+  }
+}

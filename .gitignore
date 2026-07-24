@@ -31,6 +31,7 @@ Thumbs.db
 *.onnx
 *.ckpt
 *.h5
+*.npz
 
 # Large datasets, videos, archives, and generated experiment outputs
 *.mp4
@@ -88,3 +89,4 @@ VisualComputingProject/expert_level/models/keypoint/legacy_hgb/*
 
 # Local review/render intermediates
 tmp/
+Ultralytics/

@@ -1,595 +1,562 @@
 # Visual Computing Project PPT Guidelines
 
-> 主题：Real-time Video Analysis and Rendering  
-> 依据：`Visual_Computing_Project.pdf`  
-> 建议主线：**问题观察 -> 失败原因 -> 可验证改动 -> 对照结果 -> 最终整合**
+本指南基于：
 
-这份 PPT 不应只是三个 demo 的功能清单。最有说服力的叙事是：我们先完成课程
-baseline，然后用真实失败现象推动迭代；每次优化都说明解决了什么、引入了什么
-新代价、如何验证，最后形成一个从 facial landmarks、expression classification
-到 body movement scoring 的统一实时系统。
+- `Visual_Computing_Project.pdf` 的 Beginner、Expert、Bonus 要求；
+- 本地 Beginner Level；
+- Zhangyx `part two` 覆盖后的 `expert_level`；
+- Zhangyx `part three` 覆盖后的 `bonus_level`；
+- 仓库中已经存在的 metrics、confusion matrix、failure cases、contact sheet
+  和 deterministic tests。
 
-## 一、先统一汇报口径
+PPT 的主线不是“我们做了三个程序”，而是：
 
-### 1. PDF 的硬要求与项目证据
+> 我们从 facial landmarks 的实时稳定性出发，将 keypoints 转换成可解释的
+> 表情几何特征，再扩展到全身姿态、空间归一化、运动比较和反应延迟补偿。
+> 每一层都经历了问题观察、对照实验、失败分析和迭代。
 
-| Level | PDF 要求 | 本项目对应证据 |
-|---|---|---|
-| Beginner | 本地 webcam、Haar 人脸框、LBF 68 点、实时显示 | `beginner_level/main.py` |
-| Beginner | 光照、头部角度、遮挡鲁棒性与替代 detector | `docs/robustness_test.md`，Expert 中的 YuNet 对照 |
-| Expert | 只用 keypoints，不用 full image 分类 | 136 维眼对齐坐标 + 38 维 landmark geometry |
-| Expert | test evaluation、confusion matrix、failure cases | `results/zhangyx_part_two/` |
-| Expert | 每次预测小于约 30 ms | Geometry-SVM 历史单样本 18.08 ms |
-| Expert | webcam prediction + expression effects | `expert_level/main.py demo --mirror` |
-| Bonus | reference 与 webcam 双 panel、双方 skeleton | `bonus_level/main.py` |
-| Bonus | 空间/时间对齐、相似度、屏幕 feedback | `bonus_level/docs/SCORING_INTEGRATION.md` |
-| Bonus | 解释 scoring techniques and metrics | 本指南第 14-16 页建议 |
+## 1. 汇报原则
 
-### 2. 哪些数字可以直接讲
+### 1.1 每一部分都讲 exploration loop
 
-- GitHub Part Two 正式历史结果可以讲，但要称为“Part Two historical full-run
-  results”或“已集成实验结果”，不要说是本次合并重新训练。
-- FER 数据完整性已确认：train 28,709，test 7,178，七类齐全。
-- 默认 Geometry-SVM：Accuracy 0.4731、Macro-F1 0.4633、单样本分类
-  18.08 ms。
-- 自动测试已验证评分公式的确定性边界，但不能代替真实 webcam FPS、真实延迟
-  和实际鲁棒性测试。
-- Beginner 的 robustness table 目前是待填写模板。没有实测数字时只能讲定性
-  观察，不能虚构成功率或 FPS。
-- PDF 中 cross-validation 是 optional；本项目合并规范更严格，正式统一训练应在
-  train split 内做 Stratified K-fold，并把 PCA 作为候选，test 只评估一次。
+统一使用以下顺序：
 
-## 二、建议的 16 页主 Deck + 2 页可选扩展
+1. Requirement：课程要求解决什么问题。
+2. Baseline：最初方案是什么。
+3. Observation：实际看到什么失败。
+4. Hypothesis：为什么会失败。
+5. Experiment：比较或修改了什么。
+6. Evidence：用什么图、表、指标证明。
+7. Decision：最终保留什么方案。
+8. Limitation：仍然没有解决什么。
 
-Slide 17 可作为评分验证 appendix；Slide 18 可与结论页合并。如果时间只有
-10 分钟，可把第 2/3 页、第 6/7 页、第 15/16 页分别合并。
+### 1.2 区分已有结果与现场结果
 
-### Slide 1 - Title + 10 秒 Demo Hook
+- 仓库 JSON/报告中的指标可以作为历史实验结果。
+- Webcam FPS、实时画面稳定性和摄像头兼容性必须在展示电脑上再次确认。
+- 不要把分类器单次 inference time 当成完整 webcam pipeline latency。
+- 不要把无 ground truth 的 pose detection availability 当成 keypoint accuracy。
 
-标题建议：
+### 1.3 验证协议必须诚实
 
-> From Facial Landmarks to Motion-Aware Dance Scoring
+Zhangyx Part Two 的正式模型使用：
 
-画面放三张并列截图：
+- 官方 `train`/`test` split；
+- 在官方 train 内做一次固定的 stratified 80/20 validation split；
+- 用 validation Macro-F1 选择参数；
+- 选模完成后才在官方 test 上评估一次。
 
-1. Beginner 的 face box + 68 points；
-2. Expert 的 emotion + effect；
-3. Bonus 的 reference/webcam skeleton + score。
+当前结果不是 5-fold cross-validation。课程 PDF 将 cross-validation 标为
+optional，因此可以展示现有结果，但答辩中必须说
+`single stratified validation split`，不能说成 K-fold。
 
-开场话术：
+如果最终合并 rubric 明确要求 Stratified K-fold，应在提交前补做并更新本文件，
+不要虚构尚未运行的 K-fold 数字。
 
-> “Our project is one continuous keypoint pipeline. We first learned where
-> keypoints fail, then used facial geometry for real-time expression
-> classification, and finally extended the same ideas of normalization and
-> temporal stability to full-body dance scoring.”
+## 2. 推荐 PPT 结构
 
-不要在第一页讲模型细节，先让老师知道最终系统可以现场运行。
+建议 18 页左右。时间不足时优先保留标有“核心”的页面。
 
-### Slide 2 - Assignment Requirements -> Our System
+## Slide 1 - Title
 
-用三行 flow 表达：
+标题：
 
-```text
-Beginner: webcam -> Haar face -> LBF 68 landmarks
-Expert: landmarks -> normalized geometry -> expression -> effect
-Bonus: YOLO pose -> spatial/temporal alignment -> grade + feedback
-```
+`Real-time Video Analysis and Rendering`
 
-右侧写三个贯穿项目的研究问题：
+副标题：
 
-- Detection 怎样在光照、角度、遮挡下保持稳定？
-- Keypoints 丢失纹理后，分类器之间为什么会产生差异？
-- Dance score 怎样既容忍自然反应延迟，又防止“站着不动也得高分”？
+`From Facial Landmarks to Expression Effects and Dance Scoring`
 
-### Slide 3 - Integration Decisions and Conflict Resolution
+内容：
 
-这一页说明你们不是机械拼接代码：
-
-| 冲突 | 选择 | 原因 |
-|---|---|---|
-| Beginner 本地模块版 vs GitHub Part One | 以本地 Beginner 为主 | ROI continuity、cache、平滑和异常小框抑制更完整 |
-| Expert 本地旧 SVM vs GitHub Part Two | 默认用 Part Two Geometry-SVM | Macro-F1 更高，仍为 keypoint-only，18.08 ms |
-| Bonus 本地模块 GUI vs GitHub Part Three 单文件 | GUI 保留本地结构，评分采用 Part Three | 兼顾工程可维护性与更合理的运动/延迟评分 |
-| PCA 降维 vs 完整几何 | PCA 保留为候选而非默认 | 速度更快，但历史 Macro-F1 明显下降 |
-
-一句总结：
-
-> “We chose algorithms by task compliance, Macro-F1, stability and latency,
-> not by whichever branch had the highest raw accuracy.”
-
-## 三、Beginner：讲清楚问题如何推动迭代
-
-### Slide 4 - Baseline: Haar + LBF
-
-展示最初流程：
-
-```text
-frame -> grayscale -> Haar candidate box -> LBF fit -> 68 landmarks
-```
-
-解释依赖关系：
-
-- Haar 失败：没有 face box，LBF 无法工作；
-- box 偏移：LBF 下颌、嘴和眼部点一起漂移；
-- 单帧检测：框和关键点会闪烁。
-
-这页必须明确保留课程指定的
-`cv2.CascadeClassifier`、`cv2.face.createFacemarkLBF()` 和 68 点输出。
-
-### Slide 5 - What Failed in Development
-
-建议用“现象 - 原因 - 证据截图”三列：
-
-| 现象 | 可能原因 | 应保存的证据 |
-|---|---|---|
-| 暗光漏检 | Haar contrast 不足 | raw 与 CLAHE 同位置截图 |
-| 侧脸/抬头漏检 | frontal Haar 的姿态先验 | yaw 较大时 DETECTED/LOST 对比 |
-| 遮嘴后 landmarks 漂移 | LBF 局部特征被遮挡 | cover-mouth 截图 |
-| 框一帧出现一帧消失 | detector 是逐帧判断 | DETECTED/CACHED/LOST 连续截图 |
-| 转头时出现鼻子大小的小框 | Haar 把局部结构当成人脸 | 96x96 异常框截图 |
-| 强增强后反而变糊 | gamma/CLAHE 放大噪声与反光 | 开/关 enhancement 对比 |
-
-不要说“CLAHE always improves detection”。项目开发实际发现，过强增强会让正常
-场景更不稳定，这正是很好的 exploration evidence。
-
-### Slide 6 - Iteration Timeline
-
-建议画成六步：
-
-```text
-Baseline Haar + LBF
-  -> CLAHE / gamma experiments
-  -> previous-box ROI + periodic full scan
-  -> short cache + IoU de-duplication
-  -> LBF geometry sanity check
-  -> relax over-strict rejection + sudden-shrink rejection
-```
-
-每一步讲一个 trade-off：
-
-- CLAHE：暗部局部对比提高，但可能放大噪声；
-- ROI/cache：减少闪烁，但短时间可能显示过期框；
-- geometry sanity check：过滤假脸，但过严会误杀侧脸；
-- landmark EMA：稳定，但会产生轻微视觉延迟；
-- sudden-shrink rejection：阻止局部小框抢占 track，但阈值过高可能忽略真实远脸。
-
-最重要的开发洞察：
-
-> “鲁棒性不只是换 detector；video continuity 本身也是信息。”
-
-### Slide 7 - Robustness Comparison and Alternative Detector
-
-同一个人、同一位置、每个场景约 20 秒，记录：
-
-- detection success rate；
-- DETECTED / CACHED / LOST 数量；
-- average FPS；
-- landmark jitter/drift；
-- false positive；
-- raw vs CLAHE；
-- Haar vs YuNet。
-
-使用现有模板：
-
-`VisualComputingProject/beginner_level/docs/robustness_test.md`
-
-至少展示正常光、暗光、左右转头、遮嘴四个场景。替代 detector 可使用 Expert
-实时入口中的 YuNet，比较时说明：
-
-- YuNet 更适合多姿态和复杂背景；
-- Haar 更轻、更符合 Beginner 指定 baseline；
-- detector 改善不能修复 LBF 自身在严重遮挡下的拟合问题。
-
-如果答辩前没有定量完成，表格写“qualitative observation”，不要填写猜测百分比。
-
-## 四、Expert：模型差异、失败案例、最终整合
-
-### Slide 8 - Why Keypoint-only and How Features Are Built
-
-左侧放 68 点图，右侧放特征流程：
-
-```text
-68x2 LBF coordinates
-  -> eye midpoint to origin
-  -> rotate eye line to horizontal
-  -> divide by inter-eye distance
-  -> 136 normalized coordinates
-  -> +38 landmark-derived geometry
-  -> 174-D Geometry-SVM
-```
-
-38 个 geometry 分成 brow、eyes、nose、mouth、global 五组。强调它们仍然只由
-keypoints 计算，没有眼睛 ROI、嘴部像素或完整人脸纹理。
-
-解释预处理目的：
-
-- translation invariance；
-- in-plane rotation invariance；
-- scale invariance；
-- 显式表达 mouth opening、brow-eye distance、eye aspect ratio 等关系。
-
-### Slide 9 - Fair Model Comparison
-
-主表建议直接使用：
-
-| Model | Feature | Accuracy | Macro-F1 | Single prediction |
-|---|---|---:|---:|---:|
-| HGB | 136 coords | 0.4313 | 0.3914 | 23.41 ms |
-| Base RBF-SVM | 136 coords | 0.4631 | 0.4347 | 5.17 ms |
-| PCA95 + SVM | 12 PCs | 0.4032 | 0.3613 | **2.68 ms** |
-| Tuned SVM | 136 coords | 0.4684 | 0.4589 | 5.31 ms |
-| Geometry-SVM | 136 + 38 | 0.4731 | **0.4633** | 18.08 ms |
-| `drop_eyes` | 136 + 28 | **0.4737** | 0.4625 | 4.90 ms |
-
-讲解顺序：
-
-1. HGB 能学非线性，但这个特征空间中不如 RBF-SVM；
-2. 基础 SVM 已显著提高 Macro-F1；
-3. PCA 最快，但无监督方差不等于分类信息；
-4. 调参主要改善类别平衡；
-5. 几何特征进一步提高 Macro-F1；
-6. `drop_eyes` Accuracy 略高但 Macro-F1 略低，因此不取代默认模型。
-
-这里一定要说“Accuracy 不是唯一选择指标”。
-
-### Slide 10 - Why PCA and Geometry Behave Differently
-
-建议左右对照：
-
-**PCA**
-
-- 优点：12 PCs，2.68 ms，训练更快；
-- 问题：保留 95% variance 不代表保留 95% discriminative information；
-- 结果：Macro-F1 从基础 SVM 的 0.4347 降到 0.3613。
-
-**Explicit Geometry**
-
-- 优点：直接表达眉、眼、嘴的相对关系；
-- 问题：部分比率会放大 LBF jitter，且特征之间可能冗余；
-- 结果：修复 458 个 tuned-coordinate SVM 的错误，也引入 424 个新错误。
-
-配图：
-
-- `03_pca_information_loss.png`
-- `02_geometry_rescues.png`
-- `04_geometry_regressions.png`
-
-结论不能写成“geometry always better”；正确结论是平均表现更好，但存在样本级
-trade-off。
-
-### Slide 11 - Confusion Matrix and Per-class Difference
-
-主图：
-
-`geometry_svm_confusion_matrix.png`
-
-旁边放 `06_per_class_f1_comparison.png`。
+- 课程、组号、成员；
+- 一张最终系统拼图：Beginner 人脸点、Expert 表情特效、Bonus 双面板评分。
 
 讲解重点：
 
-- happy、surprise 的嘴形和开口几何更明显；
-- fear、sad、neutral 在 landmark space 中重叠更大；
-- disgust 样本少，指标波动更大；
-- keypoint-only 缺少 wrinkles、cheek tension、skin texture 等信息。
+> 我们关注的不只是最终效果，而是 keypoint pipeline 在真实条件下为什么失败，
+> 以及怎样通过归一化、模型比较和时空对齐逐步提高可用性。
 
-不要只朗读对角线。选择一到两个最明显的 confusion pair，解释它为什么发生。
+## Slide 2 - Project Map and Research Questions
 
-### Slide 12 - One Failure Case Deep Dive
-
-推荐用 `05_all_models_wrong.png` 中的 #1047：
+用三层流程图：
 
 ```text
-true label: disgust
-HGB / SVM / PCA-SVM: neutral
-Tuned-SVM / Geometry-SVM: angry
+Webcam face
+  -> 68 facial landmarks
+  -> expression geometry/classification
+  -> visual effects
+  -> 17 body keypoints
+  -> spatial + temporal alignment
+  -> dance score and feedback
 ```
 
-分析分四层：
+三个研究问题：
 
-1. 输入质量：48x48，眼镜、侧向光照和低对比；
-2. landmark fit：68 点可以拟合，但无法表达鼻皱、皮肤纹理；
-3. representation limit：disgust 与 angry/neutral 的几何可能接近；
-4. data uncertainty：FER label 也可能有主观性，不应把每个错误都归因于 classifier。
+1. Face detector 与 LBF 在光照、姿态、遮挡下是否稳定？
+2. 只使用 landmarks 时，不同模型和特征为什么表现不同？
+3. 不同人体位置、尺度、镜像和反应延迟下，如何公平评分？
 
-提出的改进必须仍尊重任务：
+## Slide 3 - Beginner Requirement and Baseline
 
-- 更严格的 landmark fit quality filtering；
-- temporal expression evidence；
-- class-balanced calibration；
-- K-fold 检查改进是否稳定；
-- 不要偷偷改成 full-image CNN 作为主模型。
+课程要求：
 
-也可把 #6568 放 appendix，展示坏图/非人脸如何暴露 dataset quality 问题。
+- 本地 webcam；
+- Haar face box；
+- LBF 68 landmarks；
+- 实时显示和正常退出；
+- 鲁棒性观察与替代/改进方案。
 
-### Slide 13 - Final Expert Integration
+展示：
 
-讲清楚“选择模型”和“工程整合”是两件事：
+- pipeline 图；
+- 正常光照正脸截图；
+- FPS overlay。
+
+讲解：
+
+> Haar 决定在哪里找脸，LBF 只能在成功人脸框中拟合。因此 landmarks 失败不一定
+> 是 LBF 本身，也可能是上游 detector 没有给出正确 ROI。
+
+## Slide 4 - Beginner Failure Matrix
+
+建议现场记录同一个人四种场景：
+
+| 场景 | Face box | 68 points | Jitter | 观察 |
+| --- | --- | --- | --- | --- |
+| 正常正脸 |  |  |  |  |
+| 暗光/背光 |  |  |  |  |
+| 左右转头 |  |  |  |  |
+| 手遮嘴/遮眼 |  |  |  |  |
+
+不要只写“效果不好”，要指出失败层级：
+
+- detector miss；
+- false-positive face；
+- face box 抖动；
+- LBF 点漂移；
+- 快速运动造成 temporal jitter。
+
+## Slide 5 - Beginner Iteration
+
+建议讲成 before/after：
+
+- preprocessing：raw、CLAHE、gamma、CLAHE + gamma；
+- detector 参数：`scaleFactor`、`minNeighbors`、最小人脸尺寸；
+- 单脸稳定跟踪；
+- landmark smoothing；
+- alternative detector 的计划或实测结果。
+
+如果没有完成 alternative detector 实验，必须写成 future work，不能写成已验证。
+
+结论形式：
+
+> CLAHE 主要改善局部低对比，但可能放大噪声；更严格的 Haar 参数降低误检，
+> 但会提高漏检。最终参数是 precision、recall 和实时性的折中。
+
+## Slide 6 - Expert Data and Keypoint Representation
+
+数据：
+
+| Split | Images |
+| --- | ---: |
+| Train | 28,709 |
+| Test | 7,178 |
+| Total | 35,887 |
+
+类别不平衡例子：
+
+- `happy` train：7,215；
+- `disgust` train：436；
+- 相差约 16.5 倍。
+
+表示流程：
+
+1. FER 48x48 放大到 192x192；
+2. 使用 centered FER crop 给 LBF 提供人脸区域；
+3. 计算左右眼中心；
+4. 平移到眼中心中点；
+5. 旋转使眼线水平；
+6. 用 inter-eye distance 缩放；
+7. 展平为 136 coordinates；
+8. 最终模型再加入 38 个 landmark-only geometry descriptors。
+
+必须强调：
+
+> Centered ROI 是 FER crop 专用策略；实时 webcam 仍使用真实 face detector。
+
+## Slide 7 - Why Keypoint Extraction Needed Iteration
+
+问题：
+
+- FER 只有 48x48；
+- Haar 在低清、紧裁剪 FER 图上经常漏检；
+- 失败不等于图中没有脸。
+
+探索：
+
+- `haar`；
+- `haar-fallback`；
+- `center`。
+
+最终选择：
+
+- 离线 FER 使用 centered region；
+- 实时 webcam 使用 Haar + LBF。
+
+局限：
+
+- centered region 可能接受错误 landmark fit；
+- 应增加 landmark geometry quality rejection。
+
+## Slide 8 - Expert Model Ladder（核心）
+
+使用仓库真实指标：
+
+| Experiment | Features | Accuracy | Macro-F1 | Single prediction |
+| --- | ---: | ---: | ---: | ---: |
+| HGB | 136 | 43.13% | 39.14% | 23.41 ms |
+| RBF-SVM | 136 | 46.31% | 43.47% | 5.17 ms |
+| PCA95 + RBF-SVM | 12 PCA comps | 40.32% | 36.13% | 2.68 ms |
+| Tuned coordinate SVM | 136 | 46.84% | 45.89% | 5.31 ms |
+| Tuned geometry SVM | 174 | 47.31% | 46.33% | 18.08 ms |
+
+讲解不要只说谁最高：
+
+- HGB：非线性但在连续几何空间中边界不如 RBF-SVM 合适；
+- RBF-SVM：适合连续、重叠的 landmark geometry；
+- PCA：更快，但 95% variance 不等于保留表情判别信息；
+- Geometry-SVM：显式表达嘴角、眼睛开合、眉眼距离、对称性。
+
+## Slide 9 - PCA Failure Analysis
+
+核心发现：
+
+- PCA 将 136 coordinates 压到 12 components；
+- prediction 降到 2.68 ms；
+- Macro-F1 从基础 SVM 的 43.47% 降到 36.13%。
+
+推荐证据：
+
+- `expert_level/level2_report_assets/03_pca_information_loss.png`
+- `expert_level/artifacts_svm_pca95/confusion_matrix.png`
+
+讲解：
+
+> PCA 优先保存总体方差，但表情可能由低方差的嘴角、眼睑或眉毛变化决定。
+> 因此“保留 95% 方差”仍可能丢失判别信息。
+
+## Slide 10 - Geometry Iteration and Ablation
+
+最终输入：
 
 ```text
-GitHub Geometry-SVM
-  + local YuNet/Haar switch
-  + LBF landmark extraction
-  + multi-face tracking
-  + landmark/probability EMA
-  + confidence and label-switch hysteresis
-  + expression-driven effects
+136 normalized coordinates + 38 geometry descriptors = 174 features
 ```
 
-为什么最终 demo 用 Geometry-SVM：
+相对 tuned coordinate SVM：
 
-- keypoint-only，符合题目；
-- 历史 Macro-F1 最高；
-- 18.08 ms 小于 30 ms；
-- 能直接嵌入现有实时稳定化和特效 pipeline。
+- Accuracy：+0.47 percentage points；
+- Macro-F1：+0.45 points；
+- `fear` F1：+2.18 points；
+- `sad` F1：+1.88 points；
+- `happy`、`angry`、`disgust` 并非全部改善。
 
-实验协议改进：
+消融候选：
 
-- 统一 `train` 在 official train 内做 Stratified K-fold；
-- PCA 在每个 fold 内拟合，防止 leakage；
-- 按 Macro-F1 mean、fold std、balanced accuracy 和 latency 选模；
-- official test 只在选模后评估一次。
+- 去掉 eye geometry 后 Accuracy 47.37%；
+- Macro-F1 46.25%，略低于最终完整 geometry 模型；
+- 因主指标是 Macro-F1，所以未替换最终模型。
 
-若还没有跑完整统一 K-fold，这页必须标注：
+结论：
 
-> “Pipeline verified by smoke tests; full K-fold result pending.”
+> Feature engineering 有整体收益，但不是每一组特征、每一个类别都受益。
 
-不能把历史 holdout 结果改称为 K-fold 结果。
+## Slide 11 - Confusion Matrix and One Failure Case（核心）
 
-## 五、Bonus：评分如何构成，以及 delay 如何分析
+展示：
 
-### Slide 14 - Pose Pipeline and Detection Challenges
+- `expert_level/artifacts_svm_geometry/confusion_matrix.png`
+- `expert_level/artifacts_svm_geometry/failure_cases.png`
 
-流程：
+真实混淆：
+
+- fear -> angry：179；
+- fear -> sad：175；
+- fear -> neutral：141；
+- sad -> neutral：219；
+- sad -> angry：208；
+- sad -> fear：206。
+
+建议深挖一个案例，而不是摆很多缩略图：
+
+1. true label / predicted label；
+2. landmarks 是否合理；
+3. geometry 为什么相似；
+4. 缺失了什么 texture cue；
+5. 是模型问题、keypoint 问题还是 label ambiguity。
+
+可用案例类型：
+
+- fear 与 surprise/angry 几何重叠；
+- disgust 依赖鼻纹、皱眉和纹理；
+- neutral 标签图中实际有笑容；
+- 极端裁剪、水印或无效人脸。
+
+## Slide 12 - Expert Final Model and Real-time Effects
+
+最终模型：
+
+- class-balanced RBF-SVM；
+- `C=10`；
+- `gamma=0.0114943`；
+- 174 landmark-derived features；
+- 18.08 ms classifier-only benchmark；
+- 满足 PDF 的 `<30 ms` 分类器目标。
+
+特效映射：
+
+| Expression | Effect |
+| --- | --- |
+| Happy | warm tint + sparkles |
+| Surprise | orange tint + star |
+| Angry | red tint + action rays |
+| Sad | blue tint + rain |
+| Fear | purple tint + echo boxes |
+| Disgust | green tint + bubbles |
+| Neutral | cyan corner markers |
+
+稳定化：
+
+- landmark EMA alpha 0.60；
+- probability EMA alpha 0.35；
+- 可现场用 `S` 切换 smoothing 做 before/after。
+
+必须说明：
+
+> 18.08 ms 仅是 classifier prediction，不包含 Haar、LBF、绘制和摄像头读取。
+
+## Slide 13 - Bonus Task 1: Pose Exploration
+
+Pipeline：
 
 ```text
-reference + webcam
-  -> YOLOv8n Pose (17 points)
-  -> main dancer tracking
-  -> confidence mask + EMA
-  -> 12 body joints
-  -> spatial normalization
-  -> delay search + motion comparison
+video
+ -> YOLOv8n Pose
+ -> all people + 17 COCO keypoints
+ -> primary dancer selection
+ -> confidence filtering
+ -> EMA smoothing
+ -> skeleton + metrics + pose cache
 ```
 
-必须讨论的 detection challenges：
+主舞者选择：
 
-- 多人：面积、画面中心、上一帧连续性和 confidence 综合选择主舞者；
-- 遮挡/出画：只比较双方共同可见关节；
-- 快动作：YOLO keypoint jitter 与 motion blur；
-- partial body：coverage penalty，至少四个共同身体点才评分；
-- mirror：比较 direct 与 anatomically mirrored candidate。
+- 首帧：area 60%、center 30%、confidence 10%；
+- 后续：continuity 45%、area 30%、center 15%、confidence 10%。
 
-### Slide 15 - How the Grade Is Constructed
+已保存实验：
 
-建议把公式分三层动画展示。
+| Clip | Frames | Primary dancer | Multi-person | Avg visible joints |
+| --- | ---: | ---: | ---: | ---: |
+| dance example | 60 | 100% | 1.67% | 16.95/17 |
+| TikTok sample | 60 | 100% | 85% | 13.77/17 |
 
-第一层，单帧 pose：
+这些数字只描述选定片段，不是整个 TikTok dataset accuracy。
 
-\[
-S_{pose}=(0.35S_{position}+0.65S_{angle})(0.60+0.40C)
-\]
+证据：
 
-- position：归一化关节欧氏距离的 Gaussian similarity；
-- angle：八个肘/肩/髋/膝角度差；
-- wrist/ankle 权重 1.35；
-- \(C=N_{common}/12\) 是 coverage。
+- `bonus_level/task1_results/.../contact_sheet.jpg`
+- 对应 `analysis.json`
 
-第二层，0.4 秒 motion：
+## Slide 14 - Bonus Runtime Architecture
 
-\[
-S_{motion}=0.70S_{vector}+0.30S_{activity}
-\]
+Part Three 的关键优化：
 
-第三层，最终相似度：
+1. reference video 预处理；
+2. 保存 annotated MP4 与 `pose_cache.npz`；
+3. 游戏时左侧读取缓存；
+4. 只有 webcam 运行 YOLO；
+5. camera worker thread 与 Tkinter GUI 分离；
+6. GUI 只消费最新 inference result，避免积压。
 
-\[
-S=(0.55S_{pose}+0.45S_{motion})\times antiStatic
-\]
+讲解：
+
+> CPU 环境下同时运行两路 YOLO 会严重降低实时性。预缓存 reference side
+> 将运行期成本从两路 inference 降为一路。
+
+## Slide 15 - Spatial Alignment and Pose Score（核心）
+
+使用肩到脚踝的 12 个 body joints，不使用 5 个 face keypoints。
+
+归一化：
+
+1. 以 hip center 为 root；
+2. hip 不可见时退化到 shoulder center 或可见 body centroid；
+3. scale 综合 shoulder width、hip width、torso length 和 body extent；
+4. 所有点执行 `(point - root) / scale`。
+
+单帧分：
+
+```text
+PoseRaw = 0.65 * AngleSimilarity + 0.35 * PositionSimilarity
+PoseScore = 100 * PoseRaw * (0.60 + 0.40 * Coverage)
+```
+
+- 8 个 elbow/shoulder/hip/knee angles；
+- angle sigma：32 degrees；
+- normalized position sigma：0.55；
+- wrists/ankles 权重 1.35；
+- 至少 4 个共同 body joints 才评分。
+
+设计理由：
+
+- angles 对平移和统一缩放稳定；
+- positions 保留手脚整体位置；
+- coverage 防止少量可见点得到过高置信度。
+
+## Slide 16 - Motion, Grade and Anti-static（核心）
+
+0.4 s motion window：
+
+```text
+Motion = 0.70 * VectorAgreement + 0.30 * ActivityAgreement
+Final = (0.55 * PoseScore + 0.45 * 100 * Motion) * AntiStaticFactor
+```
+
+`AntiStaticFactor` 范围约 0.45-1.00。参考在动而玩家活动不足时：
+
+- 显示 `MOVE!`；
+- 0 points；
+- combo reset。
 
 Grade：
 
-| Similarity | Feedback | Base points |
-|---:|---|---:|
-| `>=85` | Perfect | 1000 |
-| `>=70` | Super | 700 |
-| `>=55` | Good | 400 |
-| `<55` | Miss | 0 |
+| Similarity | Feedback | Points | Combo |
+| --- | --- | ---: | --- |
+| insufficient history | SYNC | 0 | unchanged |
+| confirmed reference hold | HOLD | 0 | unchanged |
+| player too static | MOVE! | 0 | reset |
+| 85-100 | PERFECT | 1000 | +1 |
+| 70-84.99 | GREAT | 700 | +1 |
+| 55-69.99 | GOOD | 400 | +1 |
+| below 55 | MISS | 0 | reset |
 
-每秒最多一次正式计分，避免高 FPS 设备占优势。Combo bonus 有上限。`Sync` 和
-真正的 `Hold` 只显示、不计分；参考在动而玩家不动时显示 `Move!`。
+为什么 HOLD 不加分：
 
-“最合理”不是说权重绝对正确，而是说明每个设计目标：
+- 避免同一个静止姿势被反复刷 PERFECT；
+- HOLD 表示 reference 停顿，不表示玩家偷懒。
 
-- angle 对身材和摄像头距离更稳定，所以占 pose 的 65%；
-- position 保留手脚落点信息；
-- motion 防止静态姿势作弊；
-- coverage 防止少数可见点偶然匹配拿满分；
-- capped combo 防止连击完全淹没动作质量。
+## Slide 17 - Delay, Mirror and HOLD Stabilization（核心）
 
-### Slide 16 - Delay: Search, Risk, and Analysis
+时间对齐：
 
-当前玩家时间 \(t\) 只搜索：
+- 玩家与当前 reference 以及过去最多 0.8 s 的 reference poses 比较；
+- 选择综合分最高的过去帧；
+- 只搜索当前和过去，不搜索未来；
+- 0.8 s 是 maximum lag，不是固定延迟。
 
-\[
-t-0.8 \le t_{reference}\le t
-\]
+镜像：
 
-并报告：
+- x coordinate 取反；
+- 同时交换 anatomical left/right joints；
+- direct 与 mirrored candidate 取更高分。
 
-\[
-lag=t_{player}-t_{reference}\ge0
-\]
+HOLD 防闪烁：
 
-必须强调“不使用未来参考帧”。这比对称搜索更符合 reaction delay 的定义。
+- reference activity EMA alpha 0.35；
+- 连续 2 个评分样本 `<0.07` 才进入 HOLD；
+- smoothed activity `>=0.10` 才退出；
+- 0.07-0.10 是 hysteresis band。
 
-为什么不能无限扩大窗口：
+验证证据：
 
-- 窗口越大，越容易从旧动作中“挑中”相似姿势，虚高分数；
-- 窗口太小，又会惩罚正常人的反应时间；
-- motion window 和 anti-static factor 用来减少只挑到相似静态姿势的问题。
+- 10 个 deterministic scoring tests；
+- 0.8 s delayed self-match 得分 100；
+- mirrored delayed self-match 得分 100。
 
-建议答辩前做 delay sweep：
+## Slide 18 - Limitations, Next Iteration and Demo
 
-| 人为延迟 | Window | Median matched lag | P90 lag | Average score | Window-edge rate |
-|---:|---:|---:|---:|---:|---:|
-| 0.0 s | 0.8 s |  |  |  |  |
-| 0.3 s | 0.8 s |  |  |  |  |
-| 0.6 s | 0.8 s |  |  |  |  |
-| 1.0 s | 0.8 s |  |  |  |  |
+Expert limitations：
 
-分析口径：
+- single validation split，不是 K-fold；
+- FER -> webcam domain shift；
+- landmarks 缺少 wrinkle、texture、depth；
+- centered FER ROI 可能接受错误 LBF fit；
+- 18.08 ms 不等于 end-to-end latency。
 
-- median：典型反应时间；
-- P90：较慢动作的尾部延迟；
-- window-edge rate：多少 match 卡在 0.8 s 边缘；
-- 1.0 s 人为延迟应明显掉分，否则窗口/相似度过宽；
-- 如果所有人的 lag 都贴近 0.8 s，应检查播放线程和时间戳，而不是直接加大窗口。
+Bonus limitations：
 
-### Slide 17 - Validation and Ablation for the Scoring System
+- 2D pose 不包含 depth/hand/finger；
+- score weights 是人工工程设计；
+- 0.4 s 净位移可能漏掉“移动后回到原位”；
+- total points 事件数受 YOLO inference rate 影响；
+- 0.8 s lag 窗口可能过度放宽节奏。
 
-若时间允许，作为 Bonus 的额外一页；否则放 appendix。
+下一轮优先级：
 
-至少比较：
+1. Expert 补做 Stratified K-fold 稳定性；
+2. 添加 landmark quality rejection；
+3. Bonus 固定 beat/time-slice 评分，提高不同电脑间公平性；
+4. 累计 motion path length，而非只看窗口端点；
+5. 用人工评分片段校准 sigma、weights 和 grade thresholds。
 
-| Test | Expected observation |
-|---|---|
-| identical pose + motion | 接近 Perfect |
-| same pose, player static | reference moving 时低于 Good，显示 Move! |
-| reference hold | Hold，不计 Miss |
-| translated/scaled skeleton | 分数应基本不变 |
-| wrong arm | position/angle/motion 都应下降 |
-| 0.4 s delayed correct move | lag 约 0.4 s，仍可高分 |
-| future-only matching case | 不得选择未来 reference |
-| partial occlusion | coverage 下降，仍可在足够点时评分 |
+现场 Demo 顺序：
 
-自动测试位于：
+1. Beginner：raw 与 CLAHE、遮挡/转头；
+2. Expert：smoothing on/off、不同表情特效；
+3. Bonus：先 reference skeleton，再 webcam、delay、mirror、score；
+4. 若时间足够，再展示 Mario extension。
 
-`VisualComputingProject/bonus_level/tests/test_temporal_alignment.py`
+## 3. 推荐图表和证据路径
 
-真实视频测试还要报告 YOLO inference time，因为 scoring 很快不代表整条 pipeline
-能达到 30 FPS。CPU 上可采用参考视频离线 pose cache 或降低 inference resolution
-作为进一步优化。
+### Expert
 
-### Slide 18 - Final Demo and Takeaways
+- 最终混淆矩阵：
+  `VisualComputingProject/expert_level/artifacts_svm_geometry/confusion_matrix.png`
+- 最终失败案例：
+  `VisualComputingProject/expert_level/artifacts_svm_geometry/failure_cases.png`
+- 六模型真实图片对照：
+  `VisualComputingProject/expert_level/level2_report_assets/`
+- 模型指标：
+  各 `artifacts*/metrics.json`
+- 详细解释：
+  `VisualComputingProject/expert_level/LEVEL2_TRAINING_DETAILED_REPORT.md`
 
-如果保留 16 页，把这页与 Slide 17 合并。
+### Bonus
 
-现场顺序：
+- 单人 contact sheet：
+  `VisualComputingProject/bonus_level/task1_results/dance_example_1/contact_sheet.jpg`
+- 多人 contact sheet：
+  `VisualComputingProject/bonus_level/task1_results/seq_00001_00009_YouTube/contact_sheet.jpg`
+- 实验 JSON：
+  对应目录的 `analysis.json`
+- 评分公式和答辩 Q&A：
+  `VisualComputingProject/bonus_level/LEVEL3_DANCE_SCORING_DETAILED_REPORT.md`
 
-1. Beginner：正脸 -> 左右转 -> 遮嘴，展示 DETECTED/CACHED/LOST；
-2. Expert：neutral -> happy -> surprise，展示 label 稳定化和 effect；
-3. Bonus：正常跟跳 -> 故意慢约 0.4 s -> 完全静止，展示 lag、score 与 Move!。
+## 4. 禁止出现的表述
 
-最后三句 takeaways：
+不要说：
 
-- Detection failure often propagates into every downstream task.
-- Keypoint geometry improves invariance and interpretability, but cannot recover
-  texture that was never represented.
-- A fair interactive score needs spatial normalization, temporal tolerance and
-  anti-cheating motion evidence together.
+- “我们用了 full face image 做 Expert classifier。”
+- “Accuracy 47% 就是项目得分。”
+- “18.08 ms 代表整个 webcam pipeline。”
+- “我们做了 5-fold cross-validation。”当前没有。
+- “TikTok dataset 全部测试准确率是 100%。”
+- “0.8 s 是系统固定把画面延迟。”
+- “HOLD 表示玩家没有动。”
+- “YOLO pose 是我们自己训练的。”
+- “所有模型失败都是模型能力不足。”数据标签和 landmark fit 也可能有问题。
 
-## 六、PPT 可直接使用的本地素材
+## 5. 一分钟总结模板
 
-Expert：
-
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/06_per_class_f1_comparison.png`
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/geometry_svm_confusion_matrix.png`
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/geometry_svm_failure_cases.png`
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/02_geometry_rescues.png`
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/03_pca_information_loss.png`
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/04_geometry_regressions.png`
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/05_all_models_wrong.png`
-- `VisualComputingProject/expert_level/results/zhangyx_part_two/group_ablation_validation.png`
-
-Beginner 需要你本地补采：
-
-- normal light；
-- dark light raw/CLAHE；
-- left/right head turn；
-- mouth/eye occlusion；
-- sudden small false box before/after；
-- Haar/YuNet comparison。
-
-Bonus 需要你本地补采：
-
-- 双 panel skeleton；
-- Perfect/Super/Good/Miss；
-- Sync/Hold/Move!；
-- 状态栏中的 positive lag；
-- 结算页的 average/median/P90 delay。
-
-## 七、答辩前执行清单
-
-### 环境与静态检查
-
-```powershell
-conda activate vc_sws3026
-python VisualComputingProject\expert_level\main.py inspect
-python VisualComputingProject\bonus_level\main.py --check
-python -m unittest discover -s VisualComputingProject\expert_level\tests -v
-python VisualComputingProject\expert_level\tests\test_keypoint_features.py
-python VisualComputingProject\expert_level\tests\test_realtime_stability.py
-python -m unittest discover -s VisualComputingProject\bonus_level\tests -v
-```
-
-### 三个现场入口
-
-```powershell
-.\run_beginner_level.ps1
-.\run_expert_level.ps1 demo --mirror
-.\run_bonus_level.ps1
-```
-
-### 正式 Expert K-fold（耗时，答辩前单独安排）
-
-```powershell
-.\run_expert_level.ps1 train --cv-folds 5 --workers 4
-```
-
-先用小样本确认流程：
-
-```powershell
-.\run_expert_level.ps1 train `
-  --max-train-per-class 100 `
-  --max-test-per-class 50 `
-  --cv-folds 3
-```
-
-注意：正式重训会覆盖当前默认模型。先备份
-`models/keypoint/current/expression_classifier.joblib`，并把正式输出与历史 Part
-Two 结果分开保存。
-
-## 八、常见答辩追问
-
-### 为什么不直接使用 full-image CNN？
-
-题目明确要求以 facial keypoints 分类。ROI-CNN 即使分数更高，也改变了任务定义；
-它可以作为 appearance upper-bound 或反例，但不能作为默认 Expert 解法。
-
-### 为什么 Geometry-SVM 不是 Accuracy 最高的 `drop_eyes`？
-
-项目以 Macro-F1 和类别平衡为主。`drop_eyes` Accuracy 0.4737 略高，但
-Macro-F1 0.4625 略低于完整 Geometry-SVM 的 0.4633。差异很小，正确结论是两者
-存在速度/类别平衡 trade-off，不是眼部特征无用。
-
-### 为什么 PCA 变差？
-
-PCA 保留的是总体方差，不知道哪些低方差方向对表情分类重要。历史 PCA95 只保留
-12 个主成分，速度提升，但 Macro-F1 降到 0.3613。
-
-### 为什么 dance score 不只比较当前 frame？
-
-单帧无法区分“跟着动作移动”和“碰巧摆出相似姿势”。加入 0.4 秒 motion 后，
-可以比较关节位移方向和活动幅度，并惩罚 reference 在动、player 静止的情况。
-
-### 0.8 秒 delay window 会不会让人作弊？
-
-会有 candidate cherry-picking 风险，因此只允许搜索过去 reference、不看未来，
-限制窗口为 0.8 秒，并把 motion similarity 和 anti-static factor 放进最终分。
-还应通过 median/P90 和 window-edge rate 检查窗口是否过宽。
-
-### 为什么没有声称 30 FPS？
-
-Expert 的 18.08 ms 是 classifier-only 历史单样本延迟，不包括 detector、LBF、
-tracking 和 rendering。Bonus 的 YOLO pose 更可能成为瓶颈。最终只能根据本机
-实测 end-to-end FPS 声称实时性能。
+> Beginner 中，我们发现 facial landmarks 的稳定性强依赖 face detector、
+> 光照和姿态，因此比较了 preprocessing 与检测稳定化策略。Expert 中，我们
+> 严格只使用 68 个 landmarks。眼中心对齐得到 136 coordinates，显式几何特征
+> 扩展到 174 维。六组实验显示 PCA 虽更快却丢失判别信息；最终 Geometry-SVM
+> 得到 46.33% Macro-F1，分类器单次预测 18.08 ms。失败主要集中在
+> fear/sad/neutral 的几何重叠、纹理信息缺失和 FER 标签噪声。Bonus 中，我们
+> 使用 YOLOv8 Pose 提取 17 点并跟踪主舞者。评分前先做身体中心与尺度归一化，
+> 再组合角度、位置、0.4 秒运动和可见点覆盖率；0.8 秒历史搜索补偿自然反应
+> 延迟，镜像匹配和 HOLD hysteresis 提高实际可玩性。我们的核心贡献是把每个
+> failure observation 转换成可解释、可验证的迭代。

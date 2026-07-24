@@ -1,69 +1,132 @@
-# Expert Level - Keypoint-only Expression Classification
+# Part Two Task 1: Facial Expression Classification
 
-本目录严格遵循项目 PDF：分类器输入仅由 68 个 facial keypoints 派生，
-不会把完整人脸图像、眼睛 ROI 或嘴部 ROI 输入分类器。
+This pipeline extracts 68 LBF landmarks from FER-2013, aligns and scales them using the eyes, trains a class-balanced classifier, and evaluates it on the provided test split.
 
-## 当前可运行主模型（以 GitHub Part Two 为主）
+The base pipeline supports histogram gradient boosting (`hgb`) and RBF-SVM.
+The final real-time model is a class-balanced RBF-SVM using the 136 normalized
+landmark coordinates plus 38 explicit facial-geometry descriptors. It was
+selected by a stratified validation search over `C` and `gamma`. HGB,
+coordinate-only SVM, and PCA-SVM are retained as controlled comparison
+experiments.
 
-`models/keypoint/current/expression_classifier.joblib` 是 Zhangyx Part Two 的
-最终 Geometry-SVM：
+## Dataset strategy
 
-- 输入：眼中心对齐后的 136 维坐标；模型 Pipeline 内追加 38 维关键点几何量；
-- FER-2013 测试集 Macro-F1：0.4633，Accuracy：0.4731；
-- 单样本分类预测：约 18.08 ms，满足小于 30 ms 的目标；
-- 摄像头：YuNet/Haar 检脸 + LBF 关键点 + 多脸跟踪 + 概率时序平滑；
-- 表情触发 sparkle、burst、red tint、blue tint 等实时特效。
+FER images are already centered face crops and are only 48x48 pixels. They are enlarged to 192x192 before LBF fitting. The default `center` mode supplies a centered face region to LBF because Haar misses many low-resolution FER faces. Two diagnostic modes are also available:
 
-原 Liyunzang RBF-SVM 仍可从合并前的 Git 历史恢复，原 Zhangyx HGB 保存在
-`models/keypoint/legacy_hgb/`。模型对比、混淆矩阵、失败案例和消融图位于
-`results/zhangyx_part_two/`。
+- `haar`: require Haar detection and record failures.
+- `haar-fallback`: try Haar first, then use the centered FER region.
 
-上述指标来自 GitHub 分支的历史正式训练结果，不是本次合并重新训练所得。
+The centered-region strategy is dataset-specific. Live webcam inference should use a real face detector as in Part One.
 
-## 统一改进训练
+## Setup
 
-新的 `train` 默认执行：
-
-1. 从 FER zip 的官方 `train`/`test` split 读取数据；
-2. 每张图运行 Haar + LBF，得到 68 个关键点；
-3. 使用眼中心消除平移、旋转与尺度，并加入眼/眉/嘴几何特征；
-4. 仅在 train split 上做 5-fold `StratifiedKFold`；
-5. 比较 `PCA + Linear SVM`、`PCA + Logistic Regression` 和 HGB；
-6. 按 Macro-F1 均值、折间稳定性、balanced accuracy 和 `<30 ms` 约束选模；
-7. 选模完成后只在官方 test split 上评估一次；
-8. 输出 confusion matrix、抽取失败和高置信误分类案例。
-
-Accuracy 只作为参考记录，不参与主要选模目标。
-
-## 使用
+Activate the same Conda environment used by Part One, then install:
 
 ```powershell
-python VisualComputingProject/expert_level/main.py inspect
-python VisualComputingProject/expert_level/main.py demo --mirror
-python VisualComputingProject/expert_level/main.py train --cv-folds 5 --workers 4
+python -m pip install -r requirements.txt
 ```
 
-快速验证训练链路可限制每类样本数：
+Only `opencv-contrib-python` should be installed; do not install a second OpenCV wheel alongside it.
+
+## Run the complete Task 1 pipeline
 
 ```powershell
-python VisualComputingProject/expert_level/main.py train `
-  --max-train-per-class 100 --max-test-per-class 50 --cv-folds 3
+python task1_pipeline.py
 ```
 
-重新训练会覆盖 `models/keypoint/current/expression_classifier.joblib`。因此正式
-重训前请先保留当前模型；历史模型均已在 `models/keypoint/legacy_*` 归档。
+The full dataset contains 35,887 images, so landmark extraction takes time. Progress and extraction speed are printed regularly. Extracted features are cached; training can later be repeated without extracting again:
 
-## 为什么保留两条训练证据
+```powershell
+python task1_pipeline.py --stage train
+```
 
-- GitHub Part Two 提供完整的 HGB、基础 SVM、PCA-SVM、调参 SVM、
-  Geometry-SVM 和几何分组消融，适合讲模型差异与失败案例。
-- 统一 `train` 入口补上 train split 内的 Stratified K-fold，并把 PCA 放在候选
-  Pipeline 内；官方 test 只用于选模后的最终一次评估，满足合并后的实验规范。
-- 当前 demo 优先使用历史表现最好的 keypoint-only Geometry-SVM；若正式 K-fold
-  重训选出更稳定且小于 30 ms 的模型，再用统一训练输出替换它。
+To train the RBF-SVM with PCA while preserving the existing artifacts, reuse the
+cached features and choose a separate output directory:
 
-## 关于历史 ROI-CNN
+```powershell
+python task1_pipeline.py --stage train --classifier svm --pca-variance 0.95 `
+    --features artifacts\fer_landmark_features.npz --output artifacts_svm_pca95
+```
 
-Sherry 分支的 ROI-CNN 文件和评估证据仍保留，作为
-“高图像分类分数但违反 keypoint-only 任务定义”的 analysis case。它不再由
-`main.py` 暴露，也不是统一 baseline 的候选模型。
+PCA is disabled by default. The PCA component count and retained variance are
+recorded in the experiment's `metrics.json`.
+
+To tune RBF-SVM `C` and `gamma` on a stratified validation split and then train
+the selected configuration on the complete official training set:
+
+```powershell
+python tune_svm.py
+```
+
+The official test set is not used for parameter selection. Results and the
+selected model are written to `artifacts_svm_tuned`.
+
+To run the same search after appending expression-focused distances, ratios,
+angles, and symmetry descriptors derived only from the 68 landmarks:
+
+```powershell
+python tune_svm.py --geometry --output artifacts_svm_geometry
+```
+
+The saved Pipeline still accepts the same 136 normalized coordinates. It
+computes the 38 geometry descriptors internally before scaling and
+classification, which keeps training and real-time inference consistent.
+
+For a quick smoke test:
+
+```powershell
+python task1_pipeline.py --max-train-per-class 50 --max-test-per-class 20 --output artifacts-smoke
+```
+
+## Outputs
+
+The `artifacts` directory contains:
+
+- `fer_landmark_features.npz`: cached normalized features and labels.
+- `expression_classifier.joblib`: trained model for real-time use in Task 2.
+- `metrics.json`: accuracy, F1 scores, timings, versions, and extraction statistics.
+- `classification_report.txt`: per-class precision, recall, and F1.
+- `confusion_matrix.png`: count and normalized confusion matrices.
+- `failure_cases.png`: high-confidence mistakes for discussion.
+- `extraction_metadata.json`: extraction settings and success rates.
+- `extraction_failures.tsv`: images that could not produce valid landmarks.
+
+The required real-time threshold is checked using repeated single-image predictions; the result is stored as `meets_30ms_requirement` in `metrics.json`.
+
+See `TASK1_REPORT.md` for the completed results, challenge discussion, confusion analysis, and limitations based on the full dataset run.
+
+## Task 2: real-time expression effects
+
+Run the webcam application after Task 1 has produced
+`artifacts_svm_geometry/expression_classifier.joblib`. The default real-time
+classifier is the tuned non-PCA geometry-augmented RBF-SVM:
+
+```powershell
+python task2_realtime.py
+```
+
+The application detects faces with Haar, fits the same 68-point LBF model, applies the Task 1 normalization, predicts expressions, and smooths both landmarks and class probabilities over time.
+
+Controls:
+
+- `E`: toggle expression effects.
+- `L`: toggle facial landmarks.
+- `S`: toggle temporal smoothing.
+- `C`: toggle CLAHE face-detection preprocessing.
+- `Q` or `Esc`: quit.
+
+Seven built-in effects require no external image assets: happy sparkles, a surprise star, angry red action lines, sad rain, fear echo boxes, disgust bubbles/green tint, and neutral corner markers. The predicted expression, confidence, FPS, and classifier-only inference time are displayed live.
+
+If another camera index is needed:
+
+```powershell
+python task2_realtime.py --camera 1
+```
+
+Generate a no-camera effect preview with:
+
+```powershell
+python task2_realtime.py --preview artifacts/effects_preview.png
+```
+
+See `TASK2_REPORT.md` for the implementation design, effect mapping, stabilization strategy, and limitations to discuss during the presentation.

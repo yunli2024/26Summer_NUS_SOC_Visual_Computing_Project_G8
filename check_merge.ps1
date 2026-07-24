@@ -8,23 +8,34 @@ $pythonExe = $pythonCommand.Source
 & $pythonExe VisualComputingProject\beginner_level\tests\check_part2_setup.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\expert_level\tests\test_keypoint_features.py
+& $pythonExe VisualComputingProject\expert_level\test_expression_features.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\expert_level\tests\test_realtime_stability.py
+& $pythonExe VisualComputingProject\bonus_level\test_dance_scoring.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe -m unittest discover -s VisualComputingProject\bonus_level\tests -p "test_*.py" -v
+& $pythonExe VisualComputingProject\expert_level\task1_pipeline.py --help
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe -m unittest discover -s VisualComputingProject\bonus_level_mario -p "test_*.py" -v
+& $pythonExe VisualComputingProject\expert_level\task2_realtime.py --preview `
+    tmp\expert_effects_preview.png
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\expert_level\main.py inspect
+& $pythonExe VisualComputingProject\bonus_level\pose_analyzer.py --help
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\bonus_level\main.py --check
+& $pythonExe VisualComputingProject\bonus_level\just_dance_app.py --help
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\bonus_level_mario\mario_camera_demo.py --check
-exit $LASTEXITCODE
+& $pythonExe VisualComputingProject\bonus_level\mario_demo\mario_camera_demo.py --check
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+$reference = "VisualComputingProject\bonus_level\task2_results\dance_example_1\annotated.mp4"
+$cache = "VisualComputingProject\bonus_level\task2_results\dance_example_1\pose_cache.npz"
+if ((Test-Path -LiteralPath $reference) -and (Test-Path -LiteralPath $cache)) {
+    & $pythonExe VisualComputingProject\bonus_level\just_dance_app.py --check
+    exit $LASTEXITCODE
+}
+
+Write-Warning "Bonus Task 2 runtime cache is not generated; see RUN_GUIDE.md."
+exit 0
