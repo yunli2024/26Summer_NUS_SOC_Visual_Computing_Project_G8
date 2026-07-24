@@ -18,10 +18,10 @@ if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
 import config
+import visualization
 from face_detector import ImprovedFaceDetector
 from landmark_detector import SmoothedLandmarkDetector
 from preprocessing import PREPROCESS_MODES, enhance_frame_for_detection, to_gray
-import visualization
 
 
 def parse_args() -> argparse.Namespace:
