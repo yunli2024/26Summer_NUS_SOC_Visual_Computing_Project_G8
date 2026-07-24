@@ -33,6 +33,14 @@ Thumbs.db
 *.h5
 *.npz
 
+# Keep only the final Expert geometry classifier in Git. Alternative experiment
+# models are reproducible from task1_pipeline.py/tune_svm.py and stay local.
+VisualComputingProject/expert_level/artifacts/expression_classifier.joblib
+VisualComputingProject/expert_level/artifacts_svm/expression_classifier.joblib
+VisualComputingProject/expert_level/artifacts_svm_pca95/expression_classifier.joblib
+VisualComputingProject/expert_level/artifacts_svm_tuned/expression_classifier.joblib
+VisualComputingProject/expert_level/artifacts_svm_geometry_ablation/expression_classifier.joblib
+
 # Large datasets, videos, archives, and generated experiment outputs
 *.mp4
 *.mov
