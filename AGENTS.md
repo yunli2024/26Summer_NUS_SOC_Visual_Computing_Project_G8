@@ -2,7 +2,7 @@
 
 本项目是 NUS SOC SWS3026 Visual Computing group project，主题为
 `Real-time Video Analysis and Rendering`。后续 agent 必须先阅读本文件，再阅读
-`Visual_Computing_Project.pdf` 和对应难度目录中的 starter code / dataset / model。
+`docs/course_materials/Visual_Computing_Project.pdf` 和对应难度目录中的 starter code / dataset / model。
 
 ## 工作语言
 
@@ -22,19 +22,19 @@
 
 ## 当前资料结构
 
-- `Visual_Computing_Project.pdf`：项目总说明，所有实现必须与此对齐。
-- `VisualComputingProject/beginner_level/`：Haar + LBF 68 点实时检测。
-- `VisualComputingProject/expert_level/`：keypoint-only 表情分类、PCA/K-fold
+- `docs/course_materials/Visual_Computing_Project.pdf`：项目总说明，所有实现必须与此对齐。
+- `beginner_level/`：Haar + LBF 68 点实时检测。
+- `expert_level/`：keypoint-only 表情分类、PCA/K-fold
   训练、实时跟踪和特效。
-- `VisualComputingProject/bonus_level/`：Just Dance 双面板、时空对齐与评分。
-- `VisualComputingProject/bonus_level_action_game/`：Sherry 的 3D runner。
-- `VisualComputingProject/bonus_level_mario/`：Zhangyx 的姿态控制平台游戏。
-- `VisualComputingProject/resources/face_models/`：Haar、LBF 与 YuNet。
-- `VisualComputingProject/resources/expression_data/facial_expression_dataset.zip`：
+- `bonus_level/`：Just Dance 双面板、时空对齐与评分。
+- `bonus_level_mario/`：Zhangyx 的姿态控制平台游戏。
+- `resources/face_models/`：Haar、LBF 与 YuNet。
+- `resources/expression_data/facial_expression_dataset.zip`：
   完整 FER-style `train`/`test` 七类数据。
-- `VisualComputingProject/resources/pose_models/yolov8n-pose.pt`：YOLOv8
+- `resources/pose_models/yolov8n-pose.pt`：YOLOv8
   nano pose 模型。
-- `VisualComputingProject/resources/videos/`：参考舞蹈视频。
+- `resources/videos/`：参考舞蹈视频。
+- `docs/`：课程说明、展示材料、开发记录和原始项目资料。
 
 ## 推荐项目目标
 

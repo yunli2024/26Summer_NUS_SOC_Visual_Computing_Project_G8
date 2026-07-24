@@ -5,35 +5,35 @@ if (-not $pythonCommand) {
 }
 $pythonExe = $pythonCommand.Source
 
-& $pythonExe VisualComputingProject\beginner_level\tests\check_part2_setup.py
+& $pythonExe beginner_level\tests\check_part2_setup.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\expert_level\test_expression_features.py
+& $pythonExe expert_level\test_expression_features.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\bonus_level\test_dance_scoring.py
+& $pythonExe bonus_level\test_dance_scoring.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\expert_level\task1_pipeline.py --help
+& $pythonExe expert_level\task1_pipeline.py --help
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\expert_level\task2_realtime.py --preview `
+& $pythonExe expert_level\task2_realtime.py --preview `
     tmp\expert_effects_preview.png
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\bonus_level\pose_analyzer.py --help
+& $pythonExe bonus_level\pose_analyzer.py --help
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\bonus_level\just_dance_app.py --help
+& $pythonExe bonus_level\just_dance_app.py --help
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $pythonExe VisualComputingProject\bonus_level_mario\mario_camera_demo.py --check
+& $pythonExe bonus_level_mario\mario_camera_demo.py --check
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-$reference = "VisualComputingProject\bonus_level\task2_results\dance_example_1\annotated.mp4"
-$cache = "VisualComputingProject\bonus_level\task2_results\dance_example_1\pose_cache.npz"
+$reference = "bonus_level\task2_results\dance_example_1\annotated.mp4"
+$cache = "bonus_level\task2_results\dance_example_1\pose_cache.npz"
 if ((Test-Path -LiteralPath $reference) -and (Test-Path -LiteralPath $cache)) {
-    & $pythonExe VisualComputingProject\bonus_level\just_dance_app.py --check
+    & $pythonExe bonus_level\just_dance_app.py --check
     exit $LASTEXITCODE
 }
 

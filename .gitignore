@@ -35,11 +35,11 @@ Thumbs.db
 
 # Keep only the final Expert geometry classifier in Git. Alternative experiment
 # models are reproducible from task1_pipeline.py/tune_svm.py and stay local.
-VisualComputingProject/expert_level/artifacts/expression_classifier.joblib
-VisualComputingProject/expert_level/artifacts_svm/expression_classifier.joblib
-VisualComputingProject/expert_level/artifacts_svm_pca95/expression_classifier.joblib
-VisualComputingProject/expert_level/artifacts_svm_tuned/expression_classifier.joblib
-VisualComputingProject/expert_level/artifacts_svm_geometry_ablation/expression_classifier.joblib
+expert_level/artifacts/expression_classifier.joblib
+expert_level/artifacts_svm/expression_classifier.joblib
+expert_level/artifacts_svm_pca95/expression_classifier.joblib
+expert_level/artifacts_svm_tuned/expression_classifier.joblib
+expert_level/artifacts_svm_geometry_ablation/expression_classifier.joblib
 
 # Large datasets, videos, archives, and generated experiment outputs
 *.mp4
@@ -54,47 +54,53 @@ wandb/
 mlruns/
 outputs/
 checkpoints/
-VisualComputingProject/**/data/
-VisualComputingProject/**/models/
-VisualComputingProject/resources/
-VisualComputingProject/project_materials/original_resources/
+beginner_level/**/data/
+beginner_level/**/models/
+bonus_level/**/data/
+bonus_level/**/models/
+bonus_level_mario/**/data/
+bonus_level_mario/**/models/
+expert_level/**/data/
+expert_level/**/models/
+resources/
 
 # Local environment files
 .env
 .env.*
 
 # Canonical runtime resources retained by the merged baseline
-!VisualComputingProject/resources/
-VisualComputingProject/resources/*
-!VisualComputingProject/resources/README.md
-!VisualComputingProject/resources/face_models/
-VisualComputingProject/resources/face_models/*
-!VisualComputingProject/resources/face_models/haarcascade_frontalface_default.xml
-!VisualComputingProject/resources/face_models/face_detection_yunet_2023mar.onnx
+!resources/
+resources/*
+!resources/README.md
+!resources/face_models/
+resources/face_models/*
+!resources/face_models/haarcascade_frontalface_default.xml
+!resources/face_models/face_detection_yunet_2023mar.onnx
 # Keep the 54 MiB LBF model local; restore it using resources/README.md.
-VisualComputingProject/resources/face_models/lbfmodel.yaml
-!VisualComputingProject/resources/pose_models/
-VisualComputingProject/resources/pose_models/*
-!VisualComputingProject/resources/pose_models/yolov8n-pose.pt
-!VisualComputingProject/resources/videos/
-VisualComputingProject/resources/videos/*
-!VisualComputingProject/resources/videos/dance_example_1.mp4
-!VisualComputingProject/resources/videos/dance_example_liyunzang.mp4
-!VisualComputingProject/resources/expression_data/
-VisualComputingProject/resources/expression_data/*
+resources/face_models/lbfmodel.yaml
+!resources/pose_models/
+resources/pose_models/*
+!resources/pose_models/yolov8n-pose.pt
+!resources/videos/
+resources/videos/*
+!resources/videos/dance_example_1.mp4
+!resources/videos/dance_example_liyunzang.mp4
+!resources/expression_data/
+resources/expression_data/*
 # Keep the 78 MiB FER-style training archive local.
-VisualComputingProject/resources/expression_data/facial_expression_dataset.zip
-!VisualComputingProject/expert_level/models/
-VisualComputingProject/expert_level/models/*
-!VisualComputingProject/expert_level/models/keypoint/
-VisualComputingProject/expert_level/models/keypoint/*
-!VisualComputingProject/expert_level/models/keypoint/current/
-VisualComputingProject/expert_level/models/keypoint/current/*
-!VisualComputingProject/expert_level/models/keypoint/current/expression_classifier.joblib
-!VisualComputingProject/expert_level/models/keypoint/legacy_hgb/
-VisualComputingProject/expert_level/models/keypoint/legacy_hgb/*
-!VisualComputingProject/expert_level/models/keypoint/legacy_hgb/expression_classifier.joblib
+resources/expression_data/facial_expression_dataset.zip
+!expert_level/models/
+expert_level/models/*
+!expert_level/models/keypoint/
+expert_level/models/keypoint/*
+!expert_level/models/keypoint/current/
+expert_level/models/keypoint/current/*
+!expert_level/models/keypoint/current/expression_classifier.joblib
+!expert_level/models/keypoint/legacy_hgb/
+expert_level/models/keypoint/legacy_hgb/*
+!expert_level/models/keypoint/legacy_hgb/expression_classifier.joblib
 
 # Local review/render intermediates
 tmp/
 Ultralytics/
+_DELETE_MANUALLY_bonus_level_action_game/

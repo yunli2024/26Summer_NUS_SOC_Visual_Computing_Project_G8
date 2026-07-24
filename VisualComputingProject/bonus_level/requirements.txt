@@ -1,5 +1,0 @@
-torch==2.13.0
-torchvision==0.28.0
-polars==1.42.1
-ultralytics-thop==2.0.20
-py-cpuinfo==9.0.0
