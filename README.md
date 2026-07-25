@@ -1,5 +1,9 @@
 # SWS3026 Visual Computing Group Project
 
+<p align="center">
+  <img src="docs/project-framework-diagram.drawio%20%281%29.png" alt="Real-time Facial and Body Keypoint Analysis Framework" width="100%">
+</p>
+
 NUS School of Computing Summer Workshop SWS3026 小组项目，主题为
 **Real-time Video Analysis and Rendering**。
 
