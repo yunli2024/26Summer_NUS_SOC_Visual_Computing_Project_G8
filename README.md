@@ -202,8 +202,8 @@ Evidence:
 ### Install
 
 ```powershell
-git clone https://github.com/yunli2024/26Summer_NUS_SOC_Visual_Computing_Project_G8.git
-cd 26Summer_NUS_SOC_Visual_Computing_Project_G8
+git clone https://github.com/yunli2024/NUS_SOC_Visual_Computing_Project_26Summer.git
+cd NUS_SOC_Visual_Computing_Project_26Summer
 
 conda env create -f environment_setup\environment.yml
 conda activate vc_sws3026
