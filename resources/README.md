@@ -25,3 +25,7 @@ The following smaller canonical assets remain versioned:
 
 Git will ignore the excluded resources after they are restored, so they will
 not be uploaded accidentally.
+
+For upstream licences and redistribution notes covering the versioned models,
+course materials, datasets, and media, see
+[Third-Party Notices](../THIRD_PARTY_NOTICES.md).

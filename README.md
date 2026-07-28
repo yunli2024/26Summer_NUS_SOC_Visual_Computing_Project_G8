@@ -1,29 +1,75 @@
 # Real-Time Facial and Body Keypoint Analysis
 
-> A CPU-first visual-computing system that turns webcam and video keypoints into expression effects, reaction-aware dance scoring, and gesture-controlled gameplay.
-
-NUS School of Computing Summer Workshop 2026 · SWS3026 Visual Computing · Group 8
-
 <p align="center">
-  <a href="poster/SWS3026_08_final.pdf">
-    <img src="poster/SWS3026_08_final.png" alt="Project poster for Real-Time Facial and Body Keypoint Analysis" width="100%">
-  </a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-1f6feb.svg" alt="License: AGPL-3.0"></a>
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
+  <img src="https://img.shields.io/badge/runtime-CPU--first-0A7F5A.svg" alt="CPU-first runtime">
+  <img src="https://img.shields.io/badge/input-keypoints%20only-7B2CBF.svg" alt="Keypoint-only expression input">
+  <img src="https://img.shields.io/badge/demos-4%20interactive-E76F51.svg" alt="Four interactive demos">
 </p>
 
-<p align="center">
-  <a href="poster/SWS3026_08_final.pdf">View poster PDF</a> ·
-  <a href="poster/SWS3026_08_final.pptx">Download editable poster</a> ·
-  <a href="docs/course_materials/Visual_Computing_Project.pdf">Course brief</a>
-</p>
+> **Project summary:** An end-to-end, CPU-first visual-computing suite that
+> converts webcam and video keypoints into facial-expression effects,
+> reaction-lag-aware dance scoring, and gesture-controlled gameplay.
+
+**NUS School of Computing Summer Workshop 2026 · SWS3026 Visual Computing · Group 8**
+
+The project goes beyond isolated model scripts: it delivers four local,
+webcam-ready applications through one reusable face/body keypoint pipeline,
+with measured accuracy, latency, robustness, and interaction behaviour.
+
+**Core stack:** Python · OpenCV · NumPy · scikit-learn · Ultralytics YOLO ·
+Tkinter · Pillow
+
+## Demo Gallery
+
+All images below come from the implemented applications or their recorded
+evaluation outputs.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/readme/beginner-landmarks.png" alt="Real-time webcam face box and 68 facial landmarks" width="100%"><br>
+      <strong>Facial landmark tracking.</strong> Haar/YuNet detection, 68-point
+      LBF landmarks, preprocessing, ROI tracking, smoothing, and live FPS.
+    </td>
+    <td width="50%" valign="top">
+      <img src="expert_level/artifacts/effects_preview.png" alt="Seven expression-driven visual effects" width="100%"><br>
+      <strong>Keypoint-only expression effects.</strong> Seven-class
+      RBF-SVM inference drives distinct overlays with confidence and temporal
+      smoothing.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="bonus_level/task2_results/dance_example_1/contact_sheet.jpg" alt="YOLOv8n pose tracking across a reference dance video" width="100%"><br>
+      <strong>Pose tracking and dance scoring.</strong> Primary-dancer
+      selection, spatial normalisation, motion comparison, mirror matching,
+      and reaction-lag alignment.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/readme/mario-pose-game.png" alt="Gesture-controlled platform game with live pose input" width="100%"><br>
+      <strong>Gesture-controlled platform game.</strong> The same pose stream
+      maps upper-body gestures to run, jump, and crouch with keyboard fallback.
+    </td>
+  </tr>
+</table>
 
 ## Project Highlights
 
-- Built four local, camera-ready demos around sparse facial and body keypoints rather than raw-frame classification.
-- Engineered a keypoint-only, seven-class expression model from 136 normalised LBF coordinates and 38 geometric descriptors.
-- Achieved **46.33% Macro-F1** and **18.08 ms classifier-only latency** on the 7,178-image FER-style test split.
-- Designed scale-, mirror-, motion-, and reaction-lag-aware dance scoring with `PERFECT / GREAT / GOOD / MISS`, score, and combo feedback.
-- Validated YOLOv8n Pose on a complete **2,680-frame CPU run**: **91.16% primary-dancer detection**, **31.40 ms pose inference**, and **23.09 FPS end-to-end offline processing** at `imgsz=320`.
-- Reused the pose stream for a camera-controlled platform game with temporal gesture confirmation and keyboard fallback.
+- **End-to-end delivery:** four local applications sharing reusable detection,
+  feature, tracking, scoring, and rendering modules.
+- **Constraint-driven ML:** expression classification uses only 174
+  keypoint-derived features—never the original face pixels.
+- **Measured performance:** **46.33% Macro-F1** and **18.08 ms**
+  classifier-only latency on the 7,178-image FER-style test split.
+- **Temporal interaction design:** dance scoring handles body scale, mirrored
+  movement, motion, static-pose exploitation, and short user reaction delays.
+- **Full-video validation:** a 2,680-frame CPU run achieved **91.16%
+  primary-dancer detection**, **31.40 ms pose inference**, and **23.09 FPS**
+  end-to-end offline processing at `imgsz=320`.
+- **Engineering quality:** clear root launchers, camera-free preflight checks,
+  modular code, persisted evidence, and **44 passing automated tests**.
 
 ## System Overview
 
@@ -38,6 +84,23 @@ The project follows one reusable flow:
 3. Normalise geometry to reduce translation, scale, rotation, and body-size bias.
 4. Classify facial expression or compare pose and motion over time.
 5. Render immediate visual, scoring, or gameplay feedback.
+
+## Project Poster
+
+<details>
+  <summary><strong>Open the full project poster</strong></summary>
+  <p align="center">
+    <a href="poster/SWS3026_08_final.pdf">
+      <img src="poster/SWS3026_08_final.png" alt="Project poster for Real-Time Facial and Body Keypoint Analysis" width="900">
+    </a>
+  </p>
+</details>
+
+<p align="center">
+  <a href="poster/SWS3026_08_final.pdf">View poster PDF</a> ·
+  <a href="poster/SWS3026_08_final.pptx">Download editable poster</a> ·
+  <a href="docs/course_materials/Visual_Computing_Project.pdf">Course brief</a>
+</p>
 
 ## Interactive Demos
 
@@ -271,6 +334,19 @@ poster/               Final editable poster, PDF, and README preview
 - [Bonus Task 1 report](bonus_level/TASK1_REPORT.md)
 - [Bonus Task 2 report](bonus_level/TASK2_REPORT.md)
 - [Mario extension guide](bonus_level_mario/README.md)
+
+## Open-Source Licence
+
+The project is distributed under the
+[GNU Affero General Public License v3.0](LICENSE). AGPL-3.0 was selected
+instead of MIT because the Bonus and Mario applications use Ultralytics YOLO
+software and pretrained weights that are released under AGPL-3.0.
+
+Original Group 8 code and assets are copyright © 2026 Zhang Zonghao,
+Wang Xiaorui, Li Yunzang, and Zhang Yunxiang. OpenCV models, course materials,
+datasets, pretrained weights, and other third-party components retain their
+original licences and copyright; see
+[Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
 ## Team
 
