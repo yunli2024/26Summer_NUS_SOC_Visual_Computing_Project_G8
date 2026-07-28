@@ -102,5 +102,31 @@ expert_level/models/keypoint/legacy_hgb/*
 
 # Local review/render intermediates
 tmp/
+.codex_tmp/
+*.inspect.ndjson
 Ultralytics/
 _DELETE_MANUALLY_bonus_level_action_game/
+
+# Local course handouts, source decks, datasets, and archived workspaces
+/Information for your Project Presentation.md
+/Visual_Computing_Project.pdf
+/project-eval-2.pdf
+/G08.pptx
+/TITLE.pptx
+/bonus_old.pptx
+/bonus_slides.pptx
+/first two levels*.pptx
+/TikTokDataset/
+/demo_0710/
+/demo_0715/
+/expert/
+/lec_info/
+/VisualComputingProject/
+/bonus_slides0725/
+/bonus_level/LEVEL3_DANCE_SCORING_DETAILED_REPORT_DOLLAR_MATH.md
+
+# Keep only the publication-ready poster exports in Git
+/poster/*
+!/poster/SWS3026_08_final.pptx
+!/poster/SWS3026_08_final.pdf
+!/poster/SWS3026_08_final.png

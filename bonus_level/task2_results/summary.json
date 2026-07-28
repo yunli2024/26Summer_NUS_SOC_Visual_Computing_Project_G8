@@ -9,26 +9,26 @@
     },
     "settings": {
       "model": "resources/pose_models/yolov8n-pose.pt",
-      "image_size": 416,
+      "image_size": 320,
       "person_confidence": 0.3,
       "keypoint_confidence": 0.35,
       "smoothing_alpha": 0.6,
-      "stride": 2,
+      "stride": 1,
       "start_frame": 0,
       "max_frames": 0,
       "device": "cpu"
     },
     "results": {
-      "processed_frames": 1340,
-      "primary_dancer_frames": 1221,
-      "primary_dancer_rate": 0.9111940298507463,
-      "multi_person_frames": 30,
-      "multi_person_rate": 0.022388059701492536,
-      "average_visible_keypoints": 16.76003276003276,
-      "average_pose_confidence": 0.9317774170739644,
-      "average_inference_ms": 19.416120596977283,
-      "processing_fps": 35.714731196542004,
-      "elapsed_seconds": 37.519531999998435
+      "processed_frames": 2680,
+      "primary_dancer_frames": 2443,
+      "primary_dancer_rate": 0.9115671641791044,
+      "multi_person_frames": 5,
+      "multi_person_rate": 0.0018656716417910447,
+      "average_visible_keypoints": 16.698731068358576,
+      "average_pose_confidence": 0.9246198308062856,
+      "average_inference_ms": 31.395679326474305,
+      "processing_fps": 23.09326593729283,
+      "elapsed_seconds": 116.05114700004924
     },
     "environment": {
       "python": "3.11.15",
