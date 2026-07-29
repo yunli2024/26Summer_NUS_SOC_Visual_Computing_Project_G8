@@ -1218,8 +1218,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--camera-height", type=int, default=540)
     parser.add_argument("--image-size", type=int, default=320, help="YOLO input size; 320 is recommended on CPU")
     parser.add_argument("--confidence", type=float, default=0.30)
-    parser.add_argument("--keypoint-confidence", type=float, default=0.45)
-    parser.add_argument("--gesture-confirmation-frames", type=int, default=3)
+    parser.add_argument(
+        "--keypoint-confidence",
+        type=float,
+        default=0.35,
+        help="Minimum pose-keypoint confidence; 0.35 keeps noisy wrists usable",
+    )
+    parser.add_argument(
+        "--gesture-confirmation-frames",
+        type=int,
+        default=2,
+        help="Consecutive gesture frames required; 2 favors responsive play",
+    )
     parser.add_argument("--check", action="store_true", help="Validate model and gesture pipeline without opening the GUI")
     return parser.parse_args()
 

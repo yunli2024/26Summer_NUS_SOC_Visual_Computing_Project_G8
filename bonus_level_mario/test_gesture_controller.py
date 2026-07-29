@@ -45,6 +45,13 @@ class HandGestureControllerTests(unittest.TestCase):
         self.assertGreater(state.horizontal, 0.5)
         self.assertEqual(state.label, "RIGHT")
 
+    def test_raised_right_hand_controls_right_without_wide_extension(self) -> None:
+        pose = self.points.copy()
+        pose[8], pose[10] = (375, 160), (390, 145)
+        _, state = self.confirm(pose)
+        self.assertGreater(state.horizontal, 0.5)
+        self.assertEqual(state.label, "RIGHT")
+
     def test_both_hands_up_trigger_one_jump(self) -> None:
         pose = self.points.copy()
         pose[9], pose[10] = (285, 120), (355, 120)
@@ -54,6 +61,20 @@ class HandGestureControllerTests(unittest.TestCase):
         self.assertTrue(second.jump)
         self.assertFalse(third.jump)
         self.assertEqual(third.label, "HANDS UP")
+
+    def test_asymmetric_near_shoulder_hands_still_trigger_jump(self) -> None:
+        pose = self.points.copy()
+        pose[9], pose[10] = (285, 160), (355, 178)
+        first, second = self.confirm(pose)
+        self.assertFalse(first.jump)
+        self.assertTrue(second.jump)
+
+    def test_hands_resting_at_shoulder_height_do_not_trigger_jump(self) -> None:
+        pose = self.points.copy()
+        pose[9], pose[10] = (285, 175), (355, 175)
+        first, second = self.confirm(pose)
+        self.assertFalse(first.jump)
+        self.assertFalse(second.jump)
 
     def test_hands_together_trigger_crouch(self) -> None:
         pose = self.points.copy()

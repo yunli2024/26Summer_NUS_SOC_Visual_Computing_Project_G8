@@ -33,7 +33,8 @@ class GestureController:
     """
 
     UPPER_JOINTS = np.asarray((5, 6, 7, 8, 9, 10), dtype=np.int32)
-    MIN_ELBOW_ANGLE = 120.0
+    MIN_ELBOW_ANGLE = 105.0
+    DIRECTION_SCORE_THRESHOLD = 0.22
 
     def __init__(
         self,
@@ -154,26 +155,55 @@ class GestureController:
         usable_height = shoulder_y + 0.35 * scale
         left_extension = (shoulder_left_x - float(leftmost[0])) / scale
         right_extension = (float(rightmost[0]) - shoulder_right_x) / scale
-        raw_left_score = (
-            float(np.clip((left_extension - 0.18) / 0.62, 0.0, 1.0))
+        horizontal_left_score = (
+            float(np.clip((left_extension - 0.10) / 0.60, 0.0, 1.0))
             if leftmost[1] < usable_height and left_elbow_angle >= self.MIN_ELBOW_ANGLE else 0.0
         )
-        raw_right_score = (
-            float(np.clip((right_extension - 0.18) / 0.62, 0.0, 1.0))
+        horizontal_right_score = (
+            float(np.clip((right_extension - 0.10) / 0.60, 0.0, 1.0))
             if rightmost[1] < usable_height and right_elbow_angle >= self.MIN_ELBOW_ANGLE else 0.0
         )
+        # A clearly raised wrist should also steer even when the forearm is
+        # mostly vertical and therefore does not extend beyond the shoulder.
+        # Requiring the wrist to stay on its own side of the body avoids
+        # treating a hand crossing the face as a direction command.
+        left_raise = (shoulder_y - float(leftmost[1])) / scale
+        right_raise = (shoulder_y - float(rightmost[1])) / scale
+        raised_left_score = (
+            float(np.clip((left_raise - 0.05) / 0.35, 0.0, 1.0))
+            if (
+                float(leftmost[0]) < shoulder_center_x
+                and left_elbow_angle >= self.MIN_ELBOW_ANGLE
+            )
+            else 0.0
+        )
+        raised_right_score = (
+            float(np.clip((right_raise - 0.05) / 0.35, 0.0, 1.0))
+            if (
+                float(rightmost[0]) > shoulder_center_x
+                and right_elbow_angle >= self.MIN_ELBOW_ANGLE
+            )
+            else 0.0
+        )
+        raw_left_score = max(horizontal_left_score, raised_left_score)
+        raw_right_score = max(horizontal_right_score, raised_right_score)
         # EMA plus hysteresis prevents a wrist near the threshold from rapidly
         # switching between movement and neutral.
-        self._left_score = 0.58 * raw_left_score + 0.42 * self._left_score
-        self._right_score = 0.58 * raw_right_score + 0.42 * self._right_score
-        raw_left = self._left_score > 0.28
-        raw_right = self._right_score > 0.28
+        self._left_score = 0.65 * raw_left_score + 0.35 * self._left_score
+        self._right_score = 0.65 * raw_right_score + 0.35 * self._right_score
+        raw_left = self._left_score > self.DIRECTION_SCORE_THRESHOLD
+        raw_right = self._right_score > self.DIRECTION_SCORE_THRESHOLD
 
         two_wrists = valid[9] and valid[10]
+        left_wrist_height = (shoulder_y - float(filtered[9, 1])) / scale
+        right_wrist_height = (shoulder_y - float(filtered[10, 1])) / scale
         both_up = bool(
             two_wrists
-            and filtered[9, 1] < shoulder_y - 0.25 * scale
-            and filtered[10, 1] < shoulder_y - 0.25 * scale
+            # Permit one noisy wrist to sit just below the shoulder line, but
+            # require the other to be clearly raised to avoid idle false jumps.
+            and left_wrist_height > -0.08
+            and right_wrist_height > -0.08
+            and max(left_wrist_height, right_wrist_height) > 0.12
         )
 
         wrist_gap = float("nan")
