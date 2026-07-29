@@ -1,34 +1,26 @@
+Canonical local environment
+===========================
+
 Environment name: vc_sws3026
-Environment path: D:\miniconda3\envs\vc_sws3026
-Python path: D:\miniconda3\envs\vc_sws3026\python.exe
-Python version: Python 3.11.15
-pip version: pip 26.1.2 from D:\miniconda3\envs\vc_sws3026\Lib\site-packages\pip (python 3.11)
+Python: 3.11
+Execution target: CPU-first; CUDA is optional
 
-OpenCV packages:
-- opencv-contrib-python 5.0.0.93
-- opencv-python 5.0.0.93
-OpenCV version: 5.0.0
-cv2.face available: True
-cv2.imshow available: True
-createFacemarkLBF: PASS
+Installation:
+1. conda env create -f environment_setup\environment.yml
+2. conda activate vc_sws3026
+3. .\environment_setup\install_runtime.ps1
 
-Dependency versions:
-- numpy: 2.4.6
-- scikit-learn: 1.9.0
-- matplotlib: 3.11.0
-- pillow: 12.3.0
-- ultralytics: 8.4.93
-- joblib: 1.5.3
-- tkinter: 8.6
-- torch: 2.13.0+cpu
+Required runtime invariant:
+- opencv-contrib-python is installed.
+- opencv-python and opencv-python-headless are not installed.
+- cv2.face.createFacemarkLBF is available.
+- Ultralytics is installed with --no-deps after its declared runtime
+  dependencies, preventing pip from adding a conflicting OpenCV wheel.
 
-CUDA available: False
-CUDA required for this project: No
-pip check: No broken requirements found.
+Verification:
+.\environment_setup\install_runtime.ps1 -CheckOnly
+.\check_merge.ps1
 
-Notes:
-- The environment was created separately from sws2026.
-- Dependencies were installed into D:\miniconda3\envs\vc_sws3026.
-- Both opencv-python and opencv-contrib-python are installed. cv2.face and cv2.imshow currently work, so this is recorded as a potential OpenCV package conflict rather than a blocking issue.
-- During conda env export, Conda warned that an old setuptools metadata file could not be removed, likely due to a temporary file handle. The active setuptools version is 83.0.0 and pip check passed.
-- Ultralytics created its default user settings file on first import.
+The versioned requirements-lock.txt records one tested dependency snapshot.
+The check_runtime.py script is the authoritative conflict and capability check
+for the active environment; no machine-specific paths are assumed.

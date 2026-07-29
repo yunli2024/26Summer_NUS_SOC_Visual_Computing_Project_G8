@@ -2,6 +2,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-1f6feb.svg" alt="License: AGPL-3.0"></a>
+  <a href="https://github.com/yunli2024/NUS_SOC_Visual_Computing_Project_26Summer/actions/workflows/core-checks.yml"><img src="https://github.com/yunli2024/NUS_SOC_Visual_Computing_Project_26Summer/actions/workflows/core-checks.yml/badge.svg" alt="Core checks"></a>
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/runtime-CPU--first-0A7F5A.svg" alt="CPU-first runtime">
   <img src="https://img.shields.io/badge/input-keypoints%20only-7B2CBF.svg" alt="Keypoint-only expression input">
@@ -42,13 +43,13 @@ evaluation outputs.
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="bonus_level/task2_results/dance_example_1/contact_sheet.jpg" alt="YOLOv8n pose tracking across a reference dance video" width="100%"><br>
-      <strong>Pose tracking and dance scoring.</strong> Primary-dancer
+      <img src="docs/readme/dance-live-scoring.gif" alt="Live dual-panel pose tracking and dance scoring demo" width="100%"><br>
+      <strong>Live pose tracking and dance scoring.</strong> Primary-dancer
       selection, spatial normalisation, motion comparison, mirror matching,
       and reaction-lag alignment.
     </td>
     <td width="50%" valign="top">
-      <img src="docs/readme/mario-pose-game.png" alt="Gesture-controlled platform game with live pose input" width="100%"><br>
+      <img src="docs/readme/mario-pose-control.gif" alt="Gesture-controlled platform game with live pose input" width="100%"><br>
       <strong>Gesture-controlled platform game.</strong> The same pose stream
       maps upper-body gestures to run, jump, and crouch with keyboard fallback.
     </td>
@@ -69,7 +70,8 @@ evaluation outputs.
   primary-dancer detection**, **31.40 ms pose inference**, and **23.09 FPS**
   end-to-end offline processing at `imgsz=320`.
 - **Engineering quality:** clear root launchers, camera-free preflight checks,
-  modular code, persisted evidence, and **44 passing automated tests**.
+  modular code, persisted evidence, **47 passing local unit tests**, and a
+  lightweight CI gate for platform-independent scoring/geometry logic.
 
 ## System Overview
 
@@ -207,10 +209,21 @@ cd NUS_SOC_Visual_Computing_Project_26Summer
 
 conda env create -f environment_setup\environment.yml
 conda activate vc_sws3026
-python -m pip install -r environment_setup\requirements.txt
+.\environment_setup\install_runtime.ps1
 ```
 
 Use `opencv-contrib-python`, not the standard `opencv-python` wheel, because LBF requires `cv2.face`.
+The installer deliberately installs Ultralytics with `--no-deps` after its
+runtime dependencies so that pip does not add a conflicting OpenCV wheel.
+Verify an existing environment without installing anything:
+
+```powershell
+.\environment_setup\install_runtime.ps1 -CheckOnly
+```
+
+If it reports `opencv-python` or `opencv-python-headless`, remove that
+conflicting wheel and reinstall `opencv-contrib-python` before running the
+demos.
 
 ### Restore Course-Provided Assets
 
@@ -287,14 +300,15 @@ Use `--camera 1` for a non-default webcam or `--image-size 256` to reduce CPU lo
 Camera-free checks:
 
 ```powershell
-python expert_level\test_expression_features.py
-python bonus_level\test_dance_scoring.py
-python -m unittest discover -s bonus_level_mario -p "test_*.py" -v
-.\run_bonus_level.ps1 --check
-.\run_mario.ps1 --check
+.\check_merge.ps1
 ```
 
-After restoring `lbfmodel.yaml`:
+This runs 47 unit tests, generates the expression-effects preview, and validates
+the Bonus and Mario model/data paths without opening a camera. If
+`lbfmodel.yaml` has not been restored, only the LBF-specific Beginner check is
+skipped with a warning.
+
+To run the Beginner check explicitly after restoring `lbfmodel.yaml`:
 
 ```powershell
 python beginner_level\tests\check_part2_setup.py
