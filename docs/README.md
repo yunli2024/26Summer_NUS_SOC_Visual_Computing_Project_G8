@@ -2,6 +2,8 @@
 
 This directory groups non-runtime project materials.
 
+- [`../PORTFOLIO.md`](../PORTFOLIO.md): recruiter-facing engineering case
+  study, evidence map, trade-offs, and interview talking points.
 - `course_materials/`: official project brief and evaluation material.
 - `presentation/`: slide decks, presentation notes, and PPT guidance.
 - `development/`: historical integration and development records.

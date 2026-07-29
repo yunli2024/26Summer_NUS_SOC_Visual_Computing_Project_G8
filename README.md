@@ -22,6 +22,10 @@ with measured accuracy, latency, robustness, and interaction behaviour.
 **Core stack:** Python · OpenCV · NumPy · scikit-learn · Ultralytics YOLO ·
 Tkinter · Pillow
 
+**Review this project quickly:** [engineering case study](PORTFOLIO.md) ·
+[measured evidence](#measured-results) · [run locally](#run) ·
+[limitations](#known-limitations)
+
 ## Demo Gallery
 
 All images below come from the implemented applications or their recorded
@@ -328,6 +332,10 @@ environment_setup/    Conda and pip environment definitions
 docs/                 Course brief, reports, framework diagram, and presentation material
 poster/               Final editable poster, PDF, and README preview
 ```
+
+`bonus_level/mario_demo/` is a frozen historical snapshot retained for
+traceability. `bonus_level_mario/` is the only maintained Mario implementation
+and the target used by the root launcher and CI.
 
 ## Known Limitations
 

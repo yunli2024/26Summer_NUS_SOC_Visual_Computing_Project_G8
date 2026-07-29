@@ -1,92 +1,32 @@
-# 摄像头手势控制平台游戏 Demo
+# Historical Mario Snapshot
 
-这是 Bonus Level 的独立扩展，不会修改或覆盖现有 Task 1、Task 2。Demo 只以只读方式复用上一级目录中的 `yolov8n-pose.pt` 和人物关键点绘制函数。
+> **Status: frozen and deprecated.** This directory is retained only to
+> preserve the original integration history. Do not run, import, test, or
+> extend this copy.
 
-## 手势控制
-
-当前版本只使用肩膀、手肘和手腕，不需要髋部、膝盖或脚踝进入画面，也不需要站立校准。
-
-- 向画面左侧举起或伸出一只手：人物向左跑。
-- 向画面右侧举起或伸出一只手：人物向右跑。
-- 双手同时举过肩膀：人物跳跃。
-- 双手在胸前靠拢：人物下蹲。
-- 双手自然放下：回到 `NEUTRAL`。
-
-每种手势默认需要连续三个检测帧成立，减少单帧关键点抖动造成的误触。双手持续举起只触发一次跳跃；放下双手后才能再次触发。
-
-跳跃使用较短的专用确认时间，并提供 0.28 秒落地缓冲：如果第二次举手发生在落地前的一小段时间内，指令会在落地帧立即执行，而不会被丢弃。
-
-左右移动增加了三帧中值滤波、手肘伸展校验和滞回：手肘角度达到约 120 度即可，不需要完全伸直；明显弯曲的手臂或单帧手腕抖动仍不会被当成方向指令。开始移动需要连续确认，连续四帧释放后才回到中立。由单手移动切换为双手跳跃时会保留原来的方向，游戏人物在空中也会保留水平惯性，因此可以边跑边跳。
-
-## 游戏内容
-
-- 仅包含一关完整的滚动平台关卡，依次包含安全教学段、问号砖段、移动平台段和终点阶梯段。
-- 包含金币、可顶问号砖、可破坏砖块、强化蘑菇、管道、坑洞、移动平台、中途检查点、最多 10 条生命、分数、计时和终点旗杆。
-- 蘑菇提供一次受伤保护；强化状态可以从下方打碎普通砖块。
-- 全关只设置两只敌人，主要难度来自移动、跳跃和路线选择，更适合肢体控制。
-- 主路线的沟壑和管道均可用基础跳跃通过，高处金币路线属于可选奖励。
-- 掉坑后回到固定的起点或中途检查点，并短暂冻结控制避免连续掉落。
-- 键盘备用控制。
-- 使用原创16位像素背景、原创人物/敌人/地块贴图，以及收集、撞砖、踩敌、受伤、检查点存档、通关六种原创芯片音效。跳跃刻意保持静音，避免连续操作过于吵闹。Windows 下通过独立播放线程按队列完整播放，避免后一个音效截断前一个音效。
-- 主角采用红帽、红衫、蓝色背带裤、白手套和胡子的经典管道工轮廓；待机、跑步、跳跃和下蹲均有独立的左/右朝向帧。
-
-人物会朝向最后一次有效移动方向。停止移动后仍保持该朝向；起跳和下蹲不会自动转回正面。
-
-游戏使用固定 `880×560` 视口，右侧控制区采用两列紧凑布局；重新开始关卡或 Windows DPI 布局重算不会拉伸 Canvas，也不会在背景边缘产生空白区域。
-
-所有一格厚的浮空平台和移动平台都是单向平台：人物上升时可以从下方直接穿过，下落时才会站到平台上；地面、阶梯、管道和砖块仍是完整实体碰撞。
-
-项目没有复制或打包任天堂《马里奥》的原版角色、贴图和音效。素材保持经典横版平台游戏的复古节奏，但角色、配色、敌人和背景设计均为原创。背景使用内置图像生成工具生成，其余像素贴图与 WAV 音效由 `build_assets.py` 本地确定性生成。完整说明和生成提示词见 `ASSET_NOTES.md`。
-
-## 运行
+The maintained implementation is [`../../bonus_level_mario/`](../../bonus_level_mario/).
+It contains the current gesture thresholds, pose adapter, tests, documentation,
+and asset set. The root launcher already targets that canonical directory:
 
 ```powershell
-conda activate visual-computing
-Set-Location "<repo-root>\bonus_level\mario_demo"
-python mario_camera_demo.py --check
-python mario_camera_demo.py
+conda activate vc_sws3026
+.\run_mario.ps1 --check
+.\run_mario.ps1
 ```
 
-打开界面后点击 **Start Camera**，让肩膀和双手出现在画面中即可开始。更换姿势后如果状态没有正常释放，可以点击 **Reset Gestures**。
-
-可以点击 **Test All Sounds** 按顺序试听金币、撞砖、踩敌、受伤、检查点存档和通关六种音效；该按钮会自动勾选声音开关。
-
-键盘备用操作：
-
-- `A/D` 或 `←/→`：左右移动。
-- `Space`、`W` 或 `↑`：跳跃。
-- `S` 或 `↓`：下蹲。
-- `R`：重新开始。
-
-摄像头不是0号时：
+For development and tests, use:
 
 ```powershell
-python mario_camera_demo.py --camera 1
+python -m unittest discover -s bonus_level_mario -p "test_*.py" -v
+python bonus_level_mario\mario_camera_demo.py --check
 ```
 
-CPU 推理较慢时：
+Why keep this snapshot?
 
-```powershell
-python mario_camera_demo.py --image-size 256
-```
+- It records the pre-integration version contributed during the group project.
+- Removing the whole directory would erase useful provenance.
+- The deprecation boundary prevents two similar implementations from appearing
+  equally authoritative.
 
-## 检验
-
-```powershell
-python -m unittest -v test_gesture_controller.py test_game_mechanics.py
-python mario_camera_demo.py --check
-```
-
-手势测试覆盖：不显示下半身、左手、右手、双手跳跃单次触发、胸前合手下蹲、弯臂误触和单帧手腕尖峰。游戏测试还覆盖跳跃缓冲、关卡组成、砖块净空、问号砖、强化受伤保护、破坏砖块、管道碰撞和检查点复活。
-
-如果需要重新生成本地原创角色、地块和音效：
-
-```powershell
-python build_assets.py
-```
-
-## 限制
-
-- YOLOv8 Pose 提供的是手腕关键点，不识别手指，因此这里的“手势”指手臂和手腕位置。
-- 肩膀和手腕需要清晰可见；手腕被身体遮挡时会暂时回到无输入状态。
-- 当前为单人单关 Demo，没有多人模式或关卡编辑器。
+See the [canonical Mario guide](../../bonus_level_mario/README.md) and the
+[project engineering case study](../../PORTFOLIO.md).
