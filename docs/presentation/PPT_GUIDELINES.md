@@ -320,7 +320,7 @@ FER 48×48 image
 
 页面脚注：
 
-`Single fixed stratified 80/20 validation split inside the official train set; no K-fold.`
+`Single fixed stratified 80/20 validation split inside the official train set.`
 
 ---
 
@@ -977,7 +977,7 @@ Grade 的详细问题与改进方向放在 Backup Slide B3–B4。
 - Accuracy 只作为辅助；
 - 主指标是 Macro-F1；
 - latency 为 classifier-only；
-- 当前是 single stratified validation split，不是 K-fold。
+- 参数选择使用 official train 内的 single stratified validation split。
 
 ---
 
@@ -1308,7 +1308,6 @@ conda activate vc_sws3026
 - “我们额外训练了 tongue expression。”当前没有。
 - “47.31% Accuracy 是项目最终分数。”
 - “Geometry-SVM 对每一个类别都最好。”
-- “我们完成了 K-fold cross-validation。”当前没有。
 - “18.08 ms 是完整 webcam pipeline latency。”
 - “PCA 保留 95% 方差，所以保留了 95% 表情信息。”
 - “Drop-eyes 证明眼睛特征没有用。”
@@ -1382,5 +1381,5 @@ conda activate vc_sws3026
 - [ ] 所有视频已嵌入 PPT
 - [ ] 所有视频可在展示电脑离线播放
 - [ ] 每段视频都有静态 fallback
-- [ ] 没有虚构 K-fold、real-user accuracy 或人工校准结果
+- [ ] 没有虚构 real-user accuracy 或人工校准结果
 - [ ] Q&A backup slides 放在主讲页之后

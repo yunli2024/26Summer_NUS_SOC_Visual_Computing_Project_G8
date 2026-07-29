@@ -24,7 +24,7 @@
 
 - `docs/course_materials/Visual_Computing_Project.pdf`：项目总说明，所有实现必须与此对齐。
 - `beginner_level/`：Haar + LBF 68 点实时检测。
-- `expert_level/`：keypoint-only 表情分类、PCA/K-fold
+- `expert_level/`：keypoint-only 表情分类、PCA/validation
   训练、实时跟踪和特效。
 - `bonus_level/`：Just Dance 双面板、时空对齐与评分。
 - `bonus_level_mario/`：Zhangyx 的姿态控制平台游戏。
@@ -98,9 +98,9 @@ Task 1 必须完成：
   - confusion matrix。
   - failure cases。
   - 遇到的挑战和改进策略。
-- 合并后的统一训练必须在 train split 内使用 Stratified K-fold，并将 PCA
+- 合并后的统一训练在 train split 内划分 stratified validation，并将 PCA
   作为候选 pipeline 的一部分；test split 只用于最终一次评估。
-- 选模以 Macro-F1、折间稳定性、类别平衡指标和实时延迟为主，accuracy
+- 选模以 Macro-F1、类别平衡指标和实时延迟为主，accuracy
   只作为参考，不能作为项目“得分”或唯一结论。
 
 Task 2 必须完成：

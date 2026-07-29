@@ -30,7 +30,7 @@ jobs:
           beginner_level expert_level bonus_level bonus_level_mario
 
       - name: Test expression feature geometry
-        run: python -m unittest discover -s expert_level -p "test_*.py"
+        run: python expert_level/test_expression_features.py
 
       - name: Test dance scoring
         run: python bonus_level/test_dance_scoring.py

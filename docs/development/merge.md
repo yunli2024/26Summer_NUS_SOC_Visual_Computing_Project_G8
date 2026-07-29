@@ -135,8 +135,8 @@ Part Two 最新完整 Geometry-SVM：
 
 | 方案 | 优点 | 不足 | 合并决策 |
 |---|---|---|---|
-| Zhangyx：眼对齐坐标 + Geometry-SVM | Macro-F1 0.4633；分类 18.08 ms；模型消融和失败分析完整 | 历史选模使用固定 holdout，尚未按统一规范跑 K-fold | 当前演示模型与主要 exploration 证据 |
-| Liyunzang：153 维几何 + RBF-SVM | Macro-F1 0.4198；分类约 3.29 ms；实时稳定性好 | 固定超参数、无 K-fold；RBF 全量重训慢；box normalization 对旋转不完全不变 | 历史快速基线 |
+| Zhangyx：眼对齐坐标 + Geometry-SVM | Macro-F1 0.4633；分类 18.08 ms；模型消融和失败分析完整 | 使用 train 内固定 stratified holdout 选模 | 当前演示模型与主要 exploration 证据 |
+| Liyunzang：153 维几何 + RBF-SVM | Macro-F1 0.4198；分类约 3.29 ms；实时稳定性好 | 固定超参数；RBF 全量重训慢；box normalization 对旋转不完全不变 | 历史快速基线 |
 | Sherry：ROI-CNN ensemble | 历史 Macro-F1 0.6630，遮挡测试完整 | 分类输入是 face/eyes/mouth 像素；landmarks 只用于裁 ROI，违反 PDF keypoint-only | 仅保留为反例/研究历史，不进入默认入口 |
 
 这里不能因为 ROI-CNN 的 accuracy/Macro-F1 更高就选它。项目评分关注的是是否
@@ -160,11 +160,9 @@ Part Two 最新完整 Geometry-SVM：
 
 ```text
 official FER train split
-  -> 5-fold StratifiedKFold
-  -> candidate A: StandardScaler + PCA(98%) + Linear SVM
-  -> candidate B: StandardScaler + PCA(98%) + Logistic Regression
-  -> candidate C: balanced HistGradientBoosting
-  -> Macro-F1 mean + fold stability + balanced accuracy + <30 ms constraint
+  -> fixed stratified train/validation holdout
+  -> compare HGB, coordinate SVM, PCA95-SVM and Geometry-SVM
+  -> tune C/gamma using validation Macro-F1
   -> refit selected model on all train
   -> evaluate exactly once on official test split
 ```
@@ -173,32 +171,24 @@ PCA 的作用不是为了“堆算法”，而是：
 
 - 关键点 x/y 和多个几何量高度相关；
 - LBF 在低清 FER 图像上会产生共同抖动方向；
-- PCA 在每个 CV fold 内拟合，避免 validation leakage；
+- PCA 只在训练子集上拟合，避免 validation leakage；
 - 保留 98% 方差并记录实际 component 数，减少冗余和线性模型计算量。
 
-K-fold 只在 train split 内进行。官方 test 不参与调参或选模，避免 test leakage。
-固定使用 `StratifiedKFold(shuffle=True, random_state=42)`，保证少数类在各 fold
-中都有代表。
-
-主要选模式：
-
-```text
-macro_f1_mean - 0.25 * macro_f1_std + 0.02 * balanced_accuracy_mean
-```
-
-同时优先过滤单样本预测不满足 30 ms 的模型。Accuracy 会被写入报告，但不参与
-主要模型选择；必须结合 per-class recall、confusion matrix 和 failure cases 解释。
+固定 validation 只从 official train split 中划分。官方 test 不参与调参或选模，
+避免 test leakage。主要按 validation Macro-F1 选模，同时检查类别平衡和单样本
+预测是否满足 30 ms。Accuracy 会被写入报告，但不能作为唯一结论；必须结合
+per-class recall、confusion matrix 和 failure cases 解释。
 
 正式训练将生成：
 
-- `cross_validation.csv/json`
 - `expert_metrics.json`
 - `confusion_matrix.csv`
 - `extraction_failures.csv`
 - `misclassification_cases.csv`
+- `svm_tuning_results.csv`
 - 重新训练后的 `models/keypoint/current/expression_classifier.joblib`
 
-合并阶段只对小样本执行了完整 smoke run，确认 PCA、K-fold、选模、最终评估和
+合并阶段只对小样本执行了完整 smoke run，确认 PCA、选模、最终评估和
 报告输出可以走通。没有把 smoke 数字伪装成正式实验结果。答辩前应在统一环境
 执行一次全量训练，并把正式结果填入 presentation。
 
@@ -206,14 +196,14 @@ macro_f1_mean - 0.25 * macro_f1_std + 0.02 * balanced_accuracy_mean
 
 1. 第一版用纯坐标 + HGB，解决了 RBF-SVM 全量训练过慢的问题，但实时单样本
    余量不大，而且没验证模型选择是否稳定。
-2. 第二版用几何特征 + RBF-SVM，Macro-F1 和延迟更好，但固定参数和单次 split
-   可能使结论偶然，box normalization 也没有显式消除旋转。
+2. 第二版用几何特征 + RBF-SVM，Macro-F1 和延迟更好；后续通过 train 内固定
+   validation 调整参数，box normalization 仍没有显式消除旋转。
 3. ROI-CNN 的指标显著更高，却是在解决 image classification，不是题目要求的
    keypoint classification，所以将它降级为“错误但有启发的对照实验”。
-4. 最终统一版回到问题定义：眼对齐 + 几何 keypoints，利用 PCA 处理相关与噪声，
-   利用 K-fold 判断模型和改进是否稳定。
+4. 最终统一版回到问题定义：眼对齐 + 几何 keypoints，并将 PCA 作为受控对照，
+   使用 train 内 validation 完成选模。
 5. 最终判断不只看 Accuracy：看 Macro-F1、各类 recall、confusion、failure
-   cases、折间方差和实时延迟。重点解释 fear/sad/neutral 为什么难，以及
+   cases 和实时延迟。重点解释 fear/sad/neutral 为什么难，以及
    keypoints 不含皱纹/纹理这一表征上限。
 
 ## 6. Bonus Level：Just Dance
@@ -353,7 +343,7 @@ python beginner_level/main.py
   probability state machine 通过。
 - Expert offline E2E：FER zip -> Haar/LBF -> 136 keypoint vector ->
   174-D Geometry-SVM prediction 通过。
-- Expert training smoke：PCA、Stratified K-fold、模型比较、选模、held-out test、
+- Expert training smoke：PCA、模型比较、选模、held-out test、
   confusion/failure 输出全部通过。
 - Bonus：3 个 temporal-alignment tests 通过。
 - Mario：28 个 unit tests 通过；`--check` 实际检测到 1 人和 17/17 keypoints。

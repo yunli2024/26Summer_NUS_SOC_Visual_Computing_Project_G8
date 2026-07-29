@@ -68,21 +68,6 @@ angles, and symmetry descriptors derived only from the 68 landmarks:
 python tune_svm.py --geometry --output artifacts_svm_geometry
 ```
 
-Confirm the fixed candidate pipelines with five-fold Stratified K-fold using
-only the official training split:
-
-```powershell
-python cross_validate_models.py `
-    --features artifacts\fer_landmark_features.npz `
-    --output artifacts_cross_validation
-```
-
-This comparison always includes coordinate SVM, PCA95-SVM, and the final
-geometry SVM. It writes fold-level CSV and aggregate JSON with Macro-F1,
-fold-to-fold variance, balanced accuracy, worst-class recall, and prediction
-latency. The loader deliberately never accesses `test_X` or `test_y`; the
-official test split remains reserved for the final one-time evaluation.
-
 The saved Pipeline still accepts the same 136 normalized coordinates. It
 computes the 38 geometry descriptors internally before scaling and
 classification, which keeps training and real-time inference consistent.

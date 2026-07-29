@@ -74,8 +74,8 @@ evaluation outputs.
   primary-dancer detection**, **31.40 ms pose inference**, and **23.09 FPS**
   end-to-end offline processing at `imgsz=320`.
 - **Engineering quality:** clear root launchers, camera-free preflight checks,
-  modular code, persisted evidence, **52 passing local unit tests**, and a
-  lightweight CI gate covering all **52 platform-independent unit tests**.
+  modular code, persisted evidence, **47 passing local unit tests**, and a
+  lightweight CI gate covering all **47 platform-independent unit tests**.
 
 ## System Overview
 
@@ -137,7 +137,10 @@ The classifier never receives the original face pixels. FER-style images are use
 | Single-sample classifier latency | **18.08 ms** |
 | `< 30 ms` classifier target | Passed |
 
-Model comparison and parameter selection were restricted to a stratified validation subset of the official training split; the official test split was used for the reported final evaluation. PCA was retained as a controlled comparison and reduced latency at a substantial Macro-F1 cost. A full Stratified K-fold confirmation remains a documented next step rather than a completed claim.
+Model comparison and parameter selection were restricted to a stratified
+validation subset of the official training split; the official test split was
+used for the reported final evaluation. PCA was retained as a controlled
+comparison and reduced latency at a substantial Macro-F1 cost.
 
 Evidence:
 
@@ -307,7 +310,7 @@ Camera-free checks:
 .\check_merge.ps1
 ```
 
-This runs 52 unit tests, generates the expression-effects preview, and validates
+This runs 47 unit tests, generates the expression-effects preview, and validates
 the Bonus and Mario model/data paths without opening a camera. If
 `lbfmodel.yaml` has not been restored, only the LBF-specific Beginner check is
 skipped with a warning.
