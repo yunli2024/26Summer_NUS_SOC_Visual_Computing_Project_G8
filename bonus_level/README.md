@@ -63,10 +63,14 @@ See `TASK1_REPORT.md` for the tested-video settings, real measurements, primary-
 
 ## Bonus Task 2
 
-`just_dance_app.py` opens a two-panel GUI. The left panel plays the annotated reference dancer; the right panel shows the mirrored webcam, detected skeleton, similarity, reaction-delay match, score, and combo.
+`just_dance_app.py` opens a two-panel GUI. The left panel plays the versioned
+reference video and draws its cached skeleton at runtime; the right panel shows
+the mirrored webcam, detected skeleton, similarity, reaction-delay match,
+score, and combo. Keeping only the compact pose cache avoids storing a second
+87 MB annotated copy of the same video.
 
-The program uses the Task 1 pose cache for the reference side, so only webcam
-frames require YOLO inference during the game. Scoring combines pose similarity
+The program uses the versioned Task 1 pose cache for the reference side, so
+only webcam frames require YOLO inference during the game. Scoring combines pose similarity
 with motion over a 0.4-second history window, tolerates up to 0.8 seconds of
 reaction delay, and can accept mirrored moves. Reference hold frames display
 `HOLD` without awarding points; standing still while the reference moves
@@ -77,7 +81,8 @@ reference activity is EMA-smoothed (`alpha=0.35`). `HOLD` requires two
 consecutive samples below `0.07` and remains active until the smoothed activity
 reaches `0.10`. The live diagnostic suffix `ref~` shows this smoothed value.
 
-First generate the 30-second reference clip and cache (the included output has already been generated):
+The repository already includes the complete reference cache. To regenerate it
+from the versioned source video:
 
 ```powershell
 python pose_analyzer.py dance_example_1.mp4 `

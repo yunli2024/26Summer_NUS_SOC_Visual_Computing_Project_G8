@@ -172,6 +172,8 @@ def draw_pose(
     valid: np.ndarray,
     box: np.ndarray,
     pose_confidence: float,
+    label_prefix: str = "PRIMARY DANCER",
+    show_confidence: bool = True,
 ) -> None:
     for first, second in SKELETON:
         if valid[first] and valid[second]:
@@ -185,7 +187,11 @@ def draw_pose(
 
     x1, y1, x2, y2 = np.rint(box).astype(int)
     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 255), 3, cv2.LINE_AA)
-    label = f"PRIMARY DANCER  pose={pose_confidence:.2f}"
+    label = (
+        f"{label_prefix}  pose={pose_confidence:.2f}"
+        if show_confidence
+        else label_prefix
+    )
     cv2.rectangle(frame, (x1, max(0, y1 - 28)), (min(frame.shape[1] - 1, x1 + 260), y1), (0, 220, 255), -1)
     cv2.putText(frame, label, (x1 + 5, max(18, y1 - 7)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (25, 25, 25), 1, cv2.LINE_AA)
 

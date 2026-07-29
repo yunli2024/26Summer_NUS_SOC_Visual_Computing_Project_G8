@@ -37,9 +37,10 @@ from dance_scoring import (  # noqa: E402
     feedback_for_score,
 )
 from pose_analyzer import PrimaryDancerTracker, draw_other_people, draw_pose, extract_detections  # noqa: E402
+from reference_cache import load_pose_cache, read_cached_reference_frame  # noqa: E402
 
 
-DEFAULT_REFERENCE = BASE_DIR / "task2_results" / "dance_example_1" / "annotated.mp4"
+DEFAULT_REFERENCE = PROJECT_DIR / "resources" / "videos" / "dance_example_1.mp4"
 DEFAULT_CACHE = BASE_DIR / "task2_results" / "dance_example_1" / "pose_cache.npz"
 DEFAULT_MODEL = PROJECT_DIR / "resources" / "pose_models" / "yolov8n-pose.pt"
 DEFAULT_SOURCE_VIDEO = PROJECT_DIR / "resources" / "videos" / "dance_example_1.mp4"
@@ -74,27 +75,6 @@ def open_camera(camera_index: int, width: int = 960, height: int = 540) -> cv2.V
             return capture
         capture.release()
     raise RuntimeError(f"Could not open camera {camera_index} using {', '.join(attempted)}.")
-
-
-def load_pose_cache(path: Path) -> dict[str, np.ndarray | float]:
-    if not path.is_file():
-        raise FileNotFoundError(
-            f"Reference pose cache not found: {path}\n"
-            "Run pose_analyzer.py first to generate pose_cache.npz."
-        )
-    with np.load(path, allow_pickle=False) as cache:
-        required = {"points", "valid", "playback_fps"}
-        missing = required.difference(cache.files)
-        if missing:
-            raise ValueError(f"Invalid pose cache; missing: {', '.join(sorted(missing))}")
-        points = cache["points"].astype(np.float32)
-        valid = cache["valid"].astype(bool)
-        playback_fps = float(np.asarray(cache["playback_fps"]).reshape(()))
-    if points.ndim != 3 or points.shape[1:] != (17, 2) or valid.shape != points.shape[:2]:
-        raise ValueError("Invalid pose cache dimensions.")
-    if playback_fps <= 0:
-        raise ValueError("Invalid playback FPS in pose cache.")
-    return {"points": points, "valid": valid, "playback_fps": playback_fps}
 
 
 def prepare_reference_assets(args: argparse.Namespace) -> bool:
@@ -183,6 +163,7 @@ class DanceGameApp:
         self.root.configure(bg="#171923")
 
         cache = load_pose_cache(args.cache)
+        self.reference_cache = cache
         self.reference_points = cache["points"]
         self.reference_valid = cache["valid"]
         self.reference_fps = float(cache["playback_fps"])
@@ -190,7 +171,9 @@ class DanceGameApp:
         if not self.reference_cap.isOpened():
             raise RuntimeError(f"Could not open reference video: {args.reference}")
         video_frames = int(self.reference_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.frame_count = min(video_frames, len(self.reference_points))
+        if int(np.max(cache["source_frames"], initial=-1)) >= video_frames:
+            raise RuntimeError("Pose cache references frames beyond the source video.")
+        self.frame_count = len(self.reference_points)
         if self.frame_count <= 0:
             raise RuntimeError("Reference video/cache contains no frames.")
 
@@ -284,12 +267,12 @@ class DanceGameApp:
         tk.Button(controls, text="Quit", command=self.close, bg="#454a63", fg="white", **button_style).pack(side=tk.RIGHT)
 
     def _show_initial_reference(self) -> None:
-        self.reference_cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        ok, frame = self.reference_cap.read()
-        if ok:
-            self.reference_frame = frame
-            self.reference_index = 0
-            self._set_image(self.reference_label, frame)
+        frame = read_cached_reference_frame(
+            self.reference_cap, self.reference_cache, 0
+        )
+        self.reference_frame = frame
+        self.reference_index = 0
+        self._set_image(self.reference_label, frame)
         blank = np.full((DISPLAY_SIZE[1], DISPLAY_SIZE[0], 3), 18, dtype=np.uint8)
         cv2.putText(blank, "Camera starts with the game", (125, 170), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (210, 210, 210), 2, cv2.LINE_AA)
         self._set_image(self.live_label, blank)
@@ -414,12 +397,12 @@ class DanceGameApp:
         elapsed = time.perf_counter() - self.start_time - self.paused_duration
         wanted = min(int(elapsed * self.reference_fps), self.frame_count - 1)
         if wanted != self.reference_index:
-            self.reference_cap.set(cv2.CAP_PROP_POS_FRAMES, wanted)
-            ok, frame = self.reference_cap.read()
-            if ok:
-                self.reference_index = wanted
-                self.reference_frame = frame
-                self._set_image(self.reference_label, frame)
+            frame = read_cached_reference_frame(
+                self.reference_cap, self.reference_cache, wanted
+            )
+            self.reference_index = wanted
+            self.reference_frame = frame
+            self._set_image(self.reference_label, frame)
         if elapsed >= self.frame_count / self.reference_fps:
             self.running = False
             self.finished = True
@@ -593,12 +576,19 @@ def validate_inputs(args: argparse.Namespace) -> int:
         video.release()
         raise RuntimeError("No scoreable pose exists in the reference cache.")
     index = int(usable[0])
-    video.set(cv2.CAP_PROP_POS_FRAMES, index)
+    source_index = int(cache["source_frames"][index])
+    if source_index >= video_frames:
+        video.release()
+        raise RuntimeError("Pose cache references frames beyond the source video.")
+    video.set(cv2.CAP_PROP_POS_FRAMES, source_index)
     frame_ok, sample_frame = video.read()
+    annotated_frame = read_cached_reference_frame(video, cache, index)
     video.release()
     match = best_reference_match(points[index], valid[index], points, valid, index, 0)
     if not frame_ok:
         raise RuntimeError("Could not decode a frame from the reference video.")
+    if annotated_frame.shape != sample_frame.shape:
+        raise RuntimeError("Cached reference rendering changed the source-frame shape.")
     model = YOLO(str(args.model))
     prediction = model.predict(
         sample_frame, conf=args.confidence, imgsz=args.image_size, device="cpu", verbose=False,
@@ -608,6 +598,7 @@ def validate_inputs(args: argparse.Namespace) -> int:
     print(f"  cached poses: {len(points)}")
     print(f"  video frames: {video_frames}")
     print(f"  playback FPS: {cache['playback_fps']:.3f}")
+    print("  cached skeleton render: ready")
     print(f"  self-match score: {match.score:.2f}" if match else "  self-match score: unavailable")
     print(f"  YOLO people in sample frame: {detected_people}")
     print(f"  model: {args.model.name}")
@@ -616,7 +607,7 @@ def validate_inputs(args: argparse.Namespace) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Bonus Task 2: Just Dance pose matching game")
-    parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE, help="Annotated reference MP4")
+    parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE, help="Reference MP4")
     parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE, help="pose_cache.npz from Task 1")
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL, help="YOLO pose model")
     parser.add_argument("--camera", type=int, default=0)

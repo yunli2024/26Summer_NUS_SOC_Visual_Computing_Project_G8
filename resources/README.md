@@ -21,6 +21,7 @@ The following smaller canonical assets remain versioned:
 - Haar and YuNet face detectors;
 - YOLOv8 nano pose weights;
 - the two reference dance videos;
+- the compact pose cache used for camera-free Bonus validation;
 - the selected keypoint expression classifiers.
 
 Git will ignore the excluded resources after they are restored, so they will

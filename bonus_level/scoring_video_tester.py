@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import time
 from pathlib import Path
-from typing import Any
 
 import cv2
 import numpy as np
@@ -23,38 +22,14 @@ from dance_scoring import (
     feedback_for_score,
     mirror_pose,
 )
+from reference_cache import load_pose_cache, read_cached_reference_frame
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_REFERENCE = BASE_DIR / "task2_results" / "dance_example_1" / "annotated.mp4"
+PROJECT_DIR = BASE_DIR.parent
+DEFAULT_REFERENCE = PROJECT_DIR / "resources" / "videos" / "dance_example_1.mp4"
 DEFAULT_CACHE = BASE_DIR / "task2_results" / "dance_example_1" / "pose_cache.npz"
 DISPLAY_SIZE = (600, 338)
-
-
-def load_pose_cache(path: Path) -> dict[str, Any]:
-    if not path.is_file():
-        raise FileNotFoundError(f"Pose cache not found: {path}")
-    with np.load(path, allow_pickle=False) as cache:
-        required = {"points", "valid", "playback_fps"}
-        missing = required.difference(cache.files)
-        if missing:
-            raise ValueError(f"Pose cache is missing: {', '.join(sorted(missing))}")
-        points = cache["points"].astype(np.float32)
-        valid = cache["valid"].astype(bool)
-        fps = float(np.asarray(cache["playback_fps"]).reshape(()))
-    if points.ndim != 3 or points.shape[1:] != (17, 2):
-        raise ValueError("Expected cached points with shape (frames, 17, 2).")
-    if valid.shape != points.shape[:2] or fps <= 0:
-        raise ValueError("Invalid pose-cache validity mask or playback FPS.")
-    return {"points": points, "valid": valid, "fps": fps}
-
-
-def read_video_frame(capture: cv2.VideoCapture, index: int) -> np.ndarray:
-    capture.set(cv2.CAP_PROP_POS_FRAMES, int(index))
-    ok, frame = capture.read()
-    if not ok:
-        raise RuntimeError(f"Could not read video frame {index}.")
-    return frame
 
 
 class ScoringVideoTester:
@@ -72,15 +47,18 @@ class ScoringVideoTester:
         self.root.configure(bg="#171923")
 
         cache = load_pose_cache(args.cache)
+        self.cache = cache
         self.points = cache["points"]
         self.valid = cache["valid"]
-        self.fps = float(cache["fps"])
+        self.fps = float(cache["playback_fps"])
         self.reference_cap = cv2.VideoCapture(str(args.reference))
         self.player_cap = cv2.VideoCapture(str(args.reference))
         if not self.reference_cap.isOpened() or not self.player_cap.isOpened():
             raise RuntimeError(f"Could not open reference video: {args.reference}")
         video_frames = int(self.reference_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.frame_count = min(video_frames, len(self.points))
+        if int(np.max(cache["source_frames"], initial=-1)) >= video_frames:
+            raise RuntimeError("Pose cache references frames beyond the source video.")
+        self.frame_count = len(self.points)
         if self.frame_count <= 0:
             raise RuntimeError("Reference video and cache contain no matching frames.")
 
@@ -312,8 +290,12 @@ class ScoringVideoTester:
     def _show_frame(self, reference_index: int) -> None:
         delay_frames = int(round(max(0.0, self.player_delay.get()) * self.fps))
         player_index = max(0, reference_index - delay_frames)
-        reference_frame = read_video_frame(self.reference_cap, reference_index)
-        player_frame = read_video_frame(self.player_cap, player_index)
+        reference_frame = read_cached_reference_frame(
+            self.reference_cap, self.cache, reference_index
+        )
+        player_frame = read_cached_reference_frame(
+            self.player_cap, self.cache, player_index, label="SIMULATED PLAYER"
+        )
         if self.mirror_player.get():
             player_frame = cv2.flip(player_frame, 1)
 
@@ -421,13 +403,15 @@ def run_check(args: argparse.Namespace) -> int:
     cache = load_pose_cache(args.cache)
     points = cache["points"]
     valid = cache["valid"]
-    fps = float(cache["fps"])
+    fps = float(cache["playback_fps"])
     capture = cv2.VideoCapture(str(args.reference))
     if not capture.isOpened():
         raise RuntimeError(f"Could not open reference video: {args.reference}")
     video_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     capture.release()
-    count = min(video_frames, len(points))
+    if int(np.max(cache["source_frames"], initial=-1)) >= video_frames:
+        raise RuntimeError("Pose cache references frames beyond the source video.")
+    count = len(points)
     if count < 20:
         raise RuntimeError("Need at least 20 aligned video/cache frames for the check.")
 

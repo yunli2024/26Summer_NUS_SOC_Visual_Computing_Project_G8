@@ -85,6 +85,7 @@ resources/pose_models/*
 resources/videos/*
 !resources/videos/dance_example_1.mp4
 !resources/videos/dance_example_liyunzang.mp4
+!bonus_level/task2_results/dance_example_1/pose_cache.npz
 !resources/expression_data/
 resources/expression_data/*
 # Keep the 78 MiB FER-style training archive local.
