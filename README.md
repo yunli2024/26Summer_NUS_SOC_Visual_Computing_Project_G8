@@ -75,7 +75,7 @@ evaluation outputs.
   end-to-end offline processing at `imgsz=320`.
 - **Engineering quality:** clear root launchers, camera-free preflight checks,
   modular code, persisted evidence, **52 passing local unit tests**, and a
-  lightweight CI gate for platform-independent scoring/geometry logic.
+  lightweight CI gate covering all **52 platform-independent unit tests**.
 
 ## System Overview
 

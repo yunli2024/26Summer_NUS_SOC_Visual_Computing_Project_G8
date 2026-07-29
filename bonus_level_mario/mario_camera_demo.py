@@ -33,8 +33,6 @@ os.environ.setdefault("YOLO_CONFIG_DIR", str(YOLO_CONFIG_PATH))
 if str(DEMO_DIR) not in sys.path:
     sys.path.insert(0, str(DEMO_DIR))
 
-from ultralytics import YOLO  # noqa: E402
-
 from gesture_controller import GestureController, GestureState  # noqa: E402
 from pose_analyzer import PrimaryDancerTracker, draw_other_people, draw_pose, extract_detections  # noqa: E402
 
@@ -506,6 +504,8 @@ class CameraPlatformDemo:
         self.message_until = time.perf_counter() + 2.5
 
     def _camera_loop(self) -> None:
+        from ultralytics import YOLO
+
         controller = GestureController(confirmation_frames=self.args.gesture_confirmation_frames)
         tracker = PrimaryDancerTracker(
             keypoint_threshold=self.args.keypoint_confidence,
@@ -1168,6 +1168,8 @@ class CameraPlatformDemo:
 
 
 def validate_demo(args: argparse.Namespace) -> int:
+    from ultralytics import YOLO
+
     if not args.model.is_file():
         raise FileNotFoundError(f"Model not found: {args.model}")
     required_assets = (

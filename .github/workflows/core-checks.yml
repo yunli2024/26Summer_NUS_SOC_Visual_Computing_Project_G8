@@ -35,5 +35,5 @@ jobs:
       - name: Test dance scoring
         run: python bonus_level/test_dance_scoring.py
 
-      - name: Test Mario gesture recognition
-        run: python bonus_level_mario/test_gesture_controller.py
+      - name: Test Mario gesture recognition and game mechanics
+        run: python -m unittest discover -s bonus_level_mario -p "test_*.py"
