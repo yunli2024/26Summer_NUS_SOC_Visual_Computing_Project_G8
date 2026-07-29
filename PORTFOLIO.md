@@ -80,7 +80,7 @@ package from being replaced by the incompatible standard OpenCV wheel.
 | Is classifier inference within the course target? | **18.08 ms** per sample, below the 30 ms target |
 | Can body pose run on CPU? | **31.40 ms** mean YOLO inference at `imgsz=320` |
 | Was the full reference video evaluated? | 2,680 frames, **91.16%** primary-dancer detection, 23.09 FPS end-to-end offline |
-| Are interaction rules regression-tested? | **47 local unit tests** plus a GitHub Actions core-logic gate |
+| Are interaction rules regression-tested? | **52 local unit tests** plus a GitHub Actions core-logic gate |
 
 Primary artifacts:
 
@@ -134,7 +134,7 @@ Adapt ownership wording to match the work you personally completed:
   achieving 46.33% Macro-F1 and 18.08 ms classifier latency without using face
   pixels as model input.
 - Hardened interactive CV demos with temporal filtering, gesture state
-  machines, portable assets, 47 deterministic tests, camera-free preflight
+  machines, portable assets, 52 deterministic tests, camera-free preflight
   checks, and GitHub Actions CI.
 
 ## Honest Next Steps

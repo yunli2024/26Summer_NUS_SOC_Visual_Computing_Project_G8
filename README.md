@@ -74,7 +74,7 @@ evaluation outputs.
   primary-dancer detection**, **31.40 ms pose inference**, and **23.09 FPS**
   end-to-end offline processing at `imgsz=320`.
 - **Engineering quality:** clear root launchers, camera-free preflight checks,
-  modular code, persisted evidence, **47 passing local unit tests**, and a
+  modular code, persisted evidence, **52 passing local unit tests**, and a
   lightweight CI gate for platform-independent scoring/geometry logic.
 
 ## System Overview
@@ -307,7 +307,7 @@ Camera-free checks:
 .\check_merge.ps1
 ```
 
-This runs 47 unit tests, generates the expression-effects preview, and validates
+This runs 52 unit tests, generates the expression-effects preview, and validates
 the Bonus and Mario model/data paths without opening a camera. If
 `lbfmodel.yaml` has not been restored, only the LBF-specific Beginner check is
 skipped with a warning.

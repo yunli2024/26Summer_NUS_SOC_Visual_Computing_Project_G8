@@ -11,7 +11,7 @@ $lbfModel = Join-Path $PSScriptRoot "resources\face_models\lbfmodel.yaml"
 Push-Location $PSScriptRoot
 try {
     Write-Host "[1/8] Expert feature tests"
-    & $pythonExe expert_level\test_expression_features.py
+    & $pythonExe -m unittest discover -s expert_level -p "test_*.py"
     if ($LASTEXITCODE -ne 0) { throw "Expert feature tests failed." }
 
     Write-Host "[2/8] Dance-scoring tests"
@@ -47,7 +47,7 @@ try {
         Write-Warning "Skipped LBF runtime check; restore resources\face_models\lbfmodel.yaml first."
     }
 
-    Write-Host "Project verification passed: 47 unit tests plus camera-free demo preflights."
+    Write-Host "Project verification passed: 52 unit tests plus camera-free demo preflights."
 }
 finally {
     Pop-Location
