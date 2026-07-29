@@ -4,7 +4,6 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-1f6feb.svg" alt="License: AGPL-3.0"></a>
   <a href="https://github.com/yunli2024/NUS_SOC_Visual_Computing_Project_26Summer/actions/workflows/core-checks.yml"><img src="https://github.com/yunli2024/NUS_SOC_Visual_Computing_Project_26Summer/actions/workflows/core-checks.yml/badge.svg" alt="Core checks"></a>
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
-  <img src="https://img.shields.io/badge/runtime-CPU--first-0A7F5A.svg" alt="CPU-first runtime">
   <img src="https://img.shields.io/badge/input-keypoints%20only-7B2CBF.svg" alt="Keypoint-only expression input">
 </p>
 
@@ -12,13 +11,9 @@
   <strong>NUS School of Computing Summer Workshop 2026 | SWS3026 Visual Computing | Group 8</strong>
 </p>
 
-<p align="center">
-  <img src="docs/readme/cover.png" alt="Group 8 presenting the real-time keypoint analysis project at the NUS SOC showcase" width="560">
-</p>
-
-An end-to-end, CPU-first visual-computing suite that turns webcam and video
-keypoints into facial-expression effects, reaction-lag-aware dance scoring,
-and gesture-controlled gameplay.
+An end-to-end visual-computing suite that turns webcam and video keypoints into
+facial-expression effects, reaction-lag-aware dance scoring, and
+gesture-controlled gameplay.
 
 **Stack:** Python | OpenCV | NumPy | scikit-learn | Ultralytics YOLO |
 Tkinter | Pillow
@@ -62,17 +57,19 @@ visitors tried the gesture-controlled game, explored pose interactions, and
 discussed the real-time vision pipeline with the team.
 
 <p align="center">
-  <img src="docs/readme/demo-day/demo-day-engagement.jpg" alt="Visitors trying gesture-controlled and pose-based demos during the NUS SOC showcase" width="100%">
+  <img src="docs/readme/cover.png" alt="Group 8 presenting the project poster and gesture-controlled game at the NUS SOC showcase" width="560">
 </p>
 
 <p align="center">
-  <em>Hands-on interaction around the booth: gesture control, live pose input,
-  and camera-driven gameplay.</em>
+  <em>Group 8 presenting the project poster and live gesture-controlled game.</em>
 </p>
 
 <details>
   <summary><strong>View all 14 showcase photos</strong></summary>
   <br>
+  <p align="center">
+    <img src="docs/readme/demo-day/demo-day-engagement.jpg" alt="Visitors trying gesture-controlled and pose-based demos during the NUS SOC showcase" width="100%">
+  </p>
   <table>
     <tr>
       <td width="50%" align="center" valign="top">
@@ -155,7 +152,7 @@ discussed the real-time vision pipeline with the team.
   original face pixels.
 - Dance scoring handles body scale, mirrored motion, static poses, and short
   user reaction delays.
-- CPU-first implementation with persisted metrics, camera-free checks, and 47
+- Persisted evaluation evidence, camera-free checks, and 47
   platform-independent unit tests.
 
 ## System Overview
@@ -190,7 +187,7 @@ scoring, or gameplay feedback.
 | Pipeline | Key results |
 |---|---|
 | Keypoint-only expression recognition | **46.33% Macro-F1**, 47.31% accuracy, **18.08 ms** classifier latency on 7,178 test images |
-| Full-video pose benchmark | **91.16%** primary-dancer detection, **31.40 ms** pose inference, **23.09 FPS** over 2,680 CPU-processed frames |
+| Full-video pose benchmark | **91.16%** primary-dancer detection, **31.40 ms** pose inference, **23.09 FPS** over 2,680 frames |
 
 Expression model selection used a stratified validation split; the official
 test split was reserved for final evaluation. Supporting evidence:
@@ -223,7 +220,7 @@ to the project.
 ## Getting Started
 
 **Requirements:** Python 3.11, Windows PowerShell, and a webcam for interactive
-demos. CPU execution is supported; CUDA is optional.
+demos.
 
 ```powershell
 git clone https://github.com/yunli2024/NUS_SOC_Visual_Computing_Project_26Summer.git
@@ -250,8 +247,8 @@ Run from the repository root after activating `vc_sws3026`:
 .\run_mario.ps1
 ```
 
-Use `Q` or `Esc` to leave the OpenCV demos. For slower CPUs, reduce pose input
-with `.\run_bonus_level.ps1 --image-size 320`.
+Use `Q` or `Esc` to leave the OpenCV demos. If pose inference is slow, reduce
+the input size with `.\run_bonus_level.ps1 --image-size 320`.
 
 ## Repository Structure
 
