@@ -395,7 +395,7 @@ def analyze_video(model, input_path: Path, output_root: Path, args: argparse.Nam
         source_frames=np.asarray(cached_source_frames, dtype=np.int32),
         source_fps=np.asarray(source_fps, dtype=np.float32),
         playback_fps=np.asarray(max(source_fps / args.stride, 1.0), dtype=np.float32),
-        input_path=np.asarray(str(input_path.resolve())),
+        input_path=np.asarray(portable_project_path(input_path)),
     )
     make_contact_sheet(contact_frames, result_dir / "contact_sheet.jpg")
     print(json.dumps(statistics["results"], indent=2), flush=True)

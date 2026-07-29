@@ -42,7 +42,7 @@
 
 ```powershell
 conda activate visual-computing
-Set-Location "D:\d\南科大\南科大大二\Visual Computing\project\part three\mario_demo"
+Set-Location "<repo-root>\bonus_level\mario_demo"
 python mario_camera_demo.py --check
 python mario_camera_demo.py
 ```

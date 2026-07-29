@@ -4,11 +4,11 @@
 
 1. 我使用 Windows 和 VS Code。
 2. 我之前已经安装了 Miniconda，安装位置大概率是：
-   D:\miniconda3
+   <miniconda-root>
 3. 我之前创建过一个 Conda 环境：
    sws2026
 4. 该环境的 Python 路径以前是：
-   D:\miniconda3\envs\sws2026\python.exe
+   <miniconda-root>\envs\sws2026\python.exe
 5. 这个环境以前可以运行 Python、OpenCV 和 NumPy，但现在不确定本项目需要的库是否都已经安装。
 6. 我不确定当前 VS Code 中的 Codex 插件是否已经正确配置，也不确定你是否拥有：
    - 读取当前工作区文件的权限
@@ -105,7 +105,7 @@ conda info --envs
 重点判断：
 
 1. 当前 Python 是否来自：
-   D:\miniconda3\envs\sws2026\python.exe
+   <miniconda-root>\envs\sws2026\python.exe
 2. 当前 VS Code 是否可能选择了错误的解释器。
 3. 当前终端是否已经激活 sws2026。
 4. pip 是否属于同一个 Python 环境。

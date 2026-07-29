@@ -6,7 +6,7 @@
 
 - 操作系统：Windows
 - 开发工具：VS Code
-- Miniconda 安装位置：D:\miniconda3
+- Miniconda 安装位置：`<miniconda-root>`
 - 当前项目需要一个全新的独立环境
 - 新环境名称统一使用：vc_sws3026
 - 建议 Python 版本：3.11
@@ -77,13 +77,13 @@ conda info --envs
 
 新环境的 Python 路径应当是：
 
-D:\miniconda3\envs\vc_sws3026\python.exe
+<miniconda-root>\envs\vc_sws3026\python.exe
 
 不要依赖 PowerShell 中的 conda activate 是否成功。
 
 后续优先使用 Python 的绝对路径执行所有命令：
 
-$PY = "D:\miniconda3\envs\vc_sws3026\python.exe"
+$PY = "<miniconda-root>\envs\vc_sws3026\python.exe"
 
 然后验证：
 

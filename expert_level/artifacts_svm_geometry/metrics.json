@@ -353,7 +353,7 @@
   ],
   "extraction": {
     "feature_version": "lbf68_eye_aligned_v1",
-    "dataset": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part two\\facial_expression_dataset\\facial_expression_dataset",
+    "dataset": "resources/expression_data/facial_expression_dataset",
     "face_mode": "center",
     "image_size": 192,
     "center_inset": 0.08,

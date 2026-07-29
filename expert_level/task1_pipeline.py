@@ -27,6 +27,15 @@ DEFAULT_DATASET = (
 DEFAULT_OUTPUT = BASE_DIR / "artifacts"
 
 
+def portable_project_path(path: Path) -> str:
+    """Prefer repository-relative paths in shareable reports and metadata."""
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(PROJECT_DIR.resolve()).as_posix()
+    except ValueError:
+        return str(resolved)
+
+
 def collect_samples(
     dataset_root: Path,
     split: str,
@@ -112,7 +121,7 @@ def extract_features(args: argparse.Namespace) -> Path:
     arrays: dict[str, np.ndarray] = {}
     metadata = {
         "feature_version": FEATURE_VERSION,
-        "dataset": str(dataset_root),
+        "dataset": portable_project_path(dataset_root),
         "face_mode": args.face_mode,
         "image_size": args.image_size,
         "center_inset": args.center_inset,

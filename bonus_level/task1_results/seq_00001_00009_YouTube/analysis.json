@@ -1,5 +1,5 @@
 {
-  "input": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part three\\TikTokDataset\\TikTok_Raw_Videos\\seq_00001_00009\\YouTube.mp4",
+  "input": "TikTokDataset/TikTok_Raw_Videos/seq_00001_00009/YouTube.mp4",
   "source": {
     "width": 1920,
     "height": 1080,
@@ -7,7 +7,7 @@
     "reported_frames": 11765
   },
   "settings": {
-    "model": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part three\\yolov8n-pose.pt",
+    "model": "resources/pose_models/yolov8n-pose.pt",
     "image_size": 416,
     "person_confidence": 0.3,
     "keypoint_confidence": 0.35,

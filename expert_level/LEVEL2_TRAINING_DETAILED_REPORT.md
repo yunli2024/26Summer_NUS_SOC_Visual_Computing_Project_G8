@@ -1010,7 +1010,7 @@ Geometry-SVM # 最终模型
 在 `visual-computing` Conda 环境中：
 
 ```powershell
-Set-Location "D:\d\南科大\南科大大二\Visual Computing\project\part two"
+Set-Location "<repo-root>\expert_level"
 ```
 
 重新提取全部关键点并训练默认 HGB：

@@ -1395,7 +1395,7 @@ Bonus Task 2 validation passed
 
 ```powershell
 conda activate visual-computing
-Set-Location "D:\d\南科大\南科大大二\Visual Computing\project\part three"
+Set-Location "<repo-root>\bonus_level"
 ```
 
 安装依赖时保留 Parts One/Two 使用的 contrib OpenCV：

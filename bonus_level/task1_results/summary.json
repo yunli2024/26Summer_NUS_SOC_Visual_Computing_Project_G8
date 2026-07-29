@@ -1,6 +1,6 @@
 [
   {
-    "input": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part three\\dance_example_1.mp4",
+    "input": "resources/videos/dance_example_1.mp4",
     "source": {
       "width": 1280,
       "height": 720,
@@ -8,7 +8,7 @@
       "reported_frames": 2682
     },
     "settings": {
-      "model": "D:\\d\\\u5357\u79d1\u5927\\\u5357\u79d1\u5927\u5927\u4e8c\\Visual Computing\\project\\part three\\yolov8n-pose.pt",
+      "model": "resources/pose_models/yolov8n-pose.pt",
       "image_size": 416,
       "person_confidence": 0.3,
       "keypoint_confidence": 0.35,
