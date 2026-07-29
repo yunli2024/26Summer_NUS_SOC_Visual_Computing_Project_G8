@@ -6,95 +6,172 @@
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/runtime-CPU--first-0A7F5A.svg" alt="CPU-first runtime">
   <img src="https://img.shields.io/badge/input-keypoints%20only-7B2CBF.svg" alt="Keypoint-only expression input">
-  <img src="https://img.shields.io/badge/demos-4%20interactive-E76F51.svg" alt="Four interactive demos">
 </p>
 
-> **Project summary:** An end-to-end, CPU-first visual-computing suite that
-> converts webcam and video keypoints into facial-expression effects,
-> reaction-lag-aware dance scoring, and gesture-controlled gameplay.
+<p align="center">
+  <strong>NUS School of Computing Summer Workshop 2026 | SWS3026 Visual Computing | Group 8</strong>
+</p>
 
-**NUS School of Computing Summer Workshop 2026 · SWS3026 Visual Computing · Group 8**
+<p align="center">
+  <img src="docs/readme/cover.png" alt="Group 8 presenting the real-time keypoint analysis project at the NUS SOC showcase" width="560">
+</p>
 
-The project goes beyond isolated model scripts: it delivers four local,
-webcam-ready applications through one reusable face/body keypoint pipeline,
-with measured accuracy, latency, robustness, and interaction behaviour.
+An end-to-end, CPU-first visual-computing suite that turns webcam and video
+keypoints into facial-expression effects, reaction-lag-aware dance scoring,
+and gesture-controlled gameplay.
 
-**Core stack:** Python · OpenCV · NumPy · scikit-learn · Ultralytics YOLO ·
-Tkinter · Pillow
+**Stack:** Python | OpenCV | NumPy | scikit-learn | Ultralytics YOLO |
+Tkinter | Pillow
 
-**Review this project quickly:** [engineering case study](PORTFOLIO.md) ·
-[measured evidence](#measured-results) · [run locally](#run) ·
-[limitations](#known-limitations)
+**Quick links:** [Run the demos](#run) | [Measured results](#measured-results) |
+[Project poster](#project-poster) | [Engineering case study](PORTFOLIO.md)
 
 ## Demo Gallery
-
-All images below come from the implemented applications or their recorded
-evaluation outputs.
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/readme/beginner-landmarks.png" alt="Real-time webcam face box and 68 facial landmarks" width="100%"><br>
-      <strong>Facial landmark tracking.</strong> Haar/YuNet detection, 68-point
-      LBF landmarks, preprocessing, ROI tracking, smoothing, and live FPS.
+      <img src="docs/readme/beginner-landmarks.png" alt="Real-time face box and 68 facial landmarks" width="100%"><br>
+      <strong>Facial landmarks.</strong> Haar/YuNet detection with 68-point
+      LBF tracking and live FPS.
     </td>
     <td width="50%" valign="top">
       <img src="expert_level/artifacts/effects_preview.png" alt="Seven expression-driven visual effects" width="100%"><br>
-      <strong>Keypoint-only expression effects.</strong> Seven-class
-      RBF-SVM inference drives distinct overlays with confidence and temporal
-      smoothing.
+      <strong>Expression effects.</strong> Keypoint-only classification drives
+      seven real-time overlays.
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/readme/dance-live-scoring.gif" alt="Live dual-panel pose tracking and dance scoring demo" width="100%"><br>
-      <strong>Live pose tracking and dance scoring.</strong> Primary-dancer
-      selection, spatial normalisation, motion comparison, mirror matching,
-      and reaction-lag alignment.
+      <img src="docs/readme/dance-live-scoring.gif" alt="Dual-panel pose tracking and dance scoring" width="100%"><br>
+      <strong>Dance scoring.</strong> Mirrored pose matching with spatial and
+      reaction-lag alignment.
     </td>
     <td width="50%" valign="top">
-      <img src="docs/readme/mario-pose-control.gif" alt="Gesture-controlled platform game with live pose input" width="100%"><br>
-      <strong>Gesture-controlled platform game.</strong> The same pose stream
-      maps upper-body gestures to run, jump, and crouch with keyboard fallback.
+      <img src="docs/readme/mario-pose-control.gif" alt="Gesture-controlled platform game" width="100%"><br>
+      <strong>Pose-controlled game.</strong> Upper-body gestures map to run,
+      jump, and crouch.
     </td>
   </tr>
 </table>
 
+## Demo Day Engagement
+
+The project was built to be played, not just watched. At the NUS SOC showcase,
+visitors tried the gesture-controlled game, explored pose interactions, and
+discussed the real-time vision pipeline with the team.
+
+<p align="center">
+  <img src="docs/readme/demo-day/demo-day-engagement.jpg" alt="Visitors trying gesture-controlled and pose-based demos during the NUS SOC showcase" width="100%">
+</p>
+
+<p align="center">
+  <em>Hands-on interaction around the booth: gesture control, live pose input,
+  and camera-driven gameplay.</em>
+</p>
+
+<details>
+  <summary><strong>View all 14 showcase photos</strong></summary>
+  <br>
+  <table>
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/01-game-display.jpg" alt="Camera-driven platform game on the showcase display" width="100%"><br>
+        <sub>Showcase-ready game</sub>
+      </td>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/02-project-walkthrough.jpg" alt="Team member presenting the project" width="100%"><br>
+        <sub>Project walkthrough</sub>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/03-gesture-interaction.jpg" alt="Visitor trying gesture control" width="100%"><br>
+        <sub>Gesture interaction</sub>
+      </td>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/04-poster-demo.jpg" alt="Poster and live application presentation" width="100%"><br>
+        <sub>Poster and live demo</sub>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/05-pose-control-test.jpg" alt="Participant testing pose control" width="100%"><br>
+        <sub>Pose-control test</sub>
+      </td>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/06-pose-interaction.jpg" alt="Visitors exploring pose interaction" width="100%"><br>
+        <sub>Trying it together</sub>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/07-live-gesture-demo.jpg" alt="Live gesture-control demonstration" width="100%"><br>
+        <sub>Live gesture demo</sub>
+      </td>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/08-game-in-action.jpg" alt="Gesture-controlled game with live pose input" width="100%"><br>
+        <sub>Game in action</sub>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/09-team-showcase.jpg" alt="Team member beside the project poster and demo" width="100%"><br>
+        <sub>Team showcase</sub>
+      </td>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/10-booth-visitors.jpg" alt="Visitors around the interactive booths" width="100%"><br>
+        <sub>Active exhibition floor</sub>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/11-level-complete.jpg" alt="Completed level and live pose-control view" width="100%"><br>
+        <sub>Level complete</sub>
+      </td>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/12-hands-on-session.jpg" alt="Visitor using the camera-driven game" width="100%"><br>
+        <sub>Hands-on session</sub>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/13-full-body-gesture.jpg" alt="Participant using a full-body gesture" width="100%"><br>
+        <sub>Full-body gesture</sub>
+      </td>
+      <td width="50%" align="center" valign="top">
+        <img src="docs/readme/demo-day/14-project-discussion.jpg" alt="Project discussion beside the running game" width="100%"><br>
+        <sub>Project discussion</sub>
+      </td>
+    </tr>
+  </table>
+</details>
+
 ## Project Highlights
 
-- **End-to-end delivery:** four local applications sharing reusable detection,
-  feature, tracking, scoring, and rendering modules.
-- **Constraint-driven ML:** expression classification uses only 174
-  keypoint-derived features—never the original face pixels.
-- **Measured performance:** **46.33% Macro-F1** and **18.08 ms**
-  classifier-only latency on the 7,178-image FER-style test split.
-- **Temporal interaction design:** dance scoring handles body scale, mirrored
-  movement, motion, static-pose exploitation, and short user reaction delays.
-- **Full-video validation:** a 2,680-frame CPU run achieved **91.16%
-  primary-dancer detection**, **31.40 ms pose inference**, and **23.09 FPS**
-  end-to-end offline processing at `imgsz=320`.
-- **Engineering quality:** clear root launchers, camera-free preflight checks,
-  modular code, persisted evidence, **47 passing local unit tests**, and a
-  lightweight CI gate covering all **47 platform-independent unit tests**.
+- Four local, webcam-ready applications built on reusable face and body
+  keypoint pipelines.
+- Expression recognition uses only 174 keypoint-derived features, never the
+  original face pixels.
+- Dance scoring handles body scale, mirrored motion, static poses, and short
+  user reaction delays.
+- CPU-first implementation with persisted metrics, camera-free checks, and 47
+  platform-independent unit tests.
 
 ## System Overview
 
 <p align="center">
-  <img src="docs/project-framework.png" alt="System architecture from video input through keypoints, analysis, and interactive output" width="100%">
+  <img src="docs/project-framework.png" alt="System architecture from video input through keypoints to interactive output" width="100%">
 </p>
 
-The project follows one reusable flow:
-
-1. Capture a webcam frame or reference-video frame.
-2. Detect a face or person and extract sparse keypoints.
-3. Normalise geometry to reduce translation, scale, rotation, and body-size bias.
-4. Classify facial expression or compare pose and motion over time.
-5. Render immediate visual, scoring, or gameplay feedback.
+Webcam or video frames are converted to sparse keypoints, normalised for
+geometry, classified or compared over time, and rendered as immediate visual,
+scoring, or gameplay feedback.
 
 ## Project Poster
 
-<details>
-  <summary><strong>Open the full project poster</strong></summary>
+<details open>
+  <summary><strong>Project poster</strong></summary>
   <p align="center">
     <a href="poster/SWS3026_08_final.pdf">
       <img src="poster/SWS3026_08_final.png" alt="Project poster for Real-Time Facial and Body Keypoint Analysis" width="900">
@@ -103,112 +180,50 @@ The project follows one reusable flow:
 </details>
 
 <p align="center">
-  <a href="poster/SWS3026_08_final.pdf">View poster PDF</a> ·
-  <a href="poster/SWS3026_08_final.pptx">Download editable poster</a> ·
+  <a href="poster/SWS3026_08_final.pdf">View PDF</a> |
+  <a href="poster/SWS3026_08_final.pptx">Download editable poster</a> |
   <a href="docs/course_materials/Visual_Computing_Project.pdf">Course brief</a>
 </p>
 
-## Interactive Demos
-
-| Module | What it demonstrates | Entry point |
-|---|---|---|
-| Facial landmarks | Haar/YuNet face detection, 68-point LBF landmarks, CLAHE, ROI tracking, smoothing, and FPS | `.\run_beginner_level.ps1` |
-| Expression effects | Keypoint-only seven-class inference, probability smoothing, labels, confidence, and seven animated effects | `.\run_expert_level.ps1` |
-| Just Dance-style scoring | Dual-panel reference/webcam pose tracking, spatial normalisation, mirror matching, reaction-lag search, score, and combo | `.\run_bonus_level.ps1` |
-| Gesture-controlled game | Upper-body pose gestures mapped to run, jump, and crouch in a complete platform level | `.\run_mario.ps1` |
-
-All demos run locally because webcam access and OpenCV/Tkinter windows are core to the project. Google Colab and notebook-only workflows are intentionally out of scope.
-
 ## Measured Results
 
-### Keypoint-Only Expression Recognition
+| Pipeline | Key results |
+|---|---|
+| Keypoint-only expression recognition | **46.33% Macro-F1**, 47.31% accuracy, **18.08 ms** classifier latency on 7,178 test images |
+| Full-video pose benchmark | **91.16%** primary-dancer detection, **31.40 ms** pose inference, **23.09 FPS** over 2,680 CPU-processed frames |
 
-The classifier never receives the original face pixels. FER-style images are used only to fit 68 LBF landmarks; the model input is the resulting keypoint geometry.
-
-| Metric | Final result |
-|---|---:|
-| Training samples | 28,709 |
-| Test samples | 7,178 |
-| Input representation | 136 normalised coordinates + 38 geometry features |
-| Classifier | Class-balanced RBF-SVM |
-| Test accuracy | 47.31% |
-| Test Macro-F1 | **46.33%** |
-| Test weighted F1 | 47.35% |
-| Single-sample classifier latency | **18.08 ms** |
-| `< 30 ms` classifier target | Passed |
-
-Model comparison and parameter selection were restricted to a stratified
-validation subset of the official training split; the official test split was
-used for the reported final evaluation. PCA was retained as a controlled
-comparison and reduced latency at a substantial Macro-F1 cost.
-
-Evidence:
-
-- [Metrics](expert_level/artifacts_svm_geometry/metrics.json)
-- [Confusion matrix](expert_level/artifacts_svm_geometry/confusion_matrix.png)
-- [Failure cases](expert_level/artifacts_svm_geometry/failure_cases.png)
-- [Detailed training report](expert_level/LEVEL2_TRAINING_DETAILED_REPORT.md)
-
-### Body Pose Benchmark
-
-The final reference-video benchmark processes every frame of the included 2,680-frame clip on CPU.
-
-| Metric | Final result |
-|---|---:|
-| Frames processed | 2,680 |
-| Primary-dancer detection | **91.16%** |
-| Visible keypoints | 16.70 / 17 average |
-| Average pose confidence | 0.925 |
-| YOLOv8n pose inference | **31.40 ms / frame** |
-| End-to-end offline throughput | **23.09 FPS** |
-| Input size | 320 |
-
-The difference between inference latency and total throughput reflects decoding, tracking, smoothing, drawing, and result collection around the model call.
-
-Evidence:
-
-- [Full-run summary](bonus_level/task2_results/summary.json)
-- [Reference contact sheet](bonus_level/task2_results/dance_example_1/contact_sheet.jpg)
-- [Scoring design report](bonus_level/LEVEL3_DANCE_SCORING_DETAILED_REPORT.md)
+Expression model selection used a stratified validation split; the official
+test split was reserved for final evaluation. Supporting evidence:
+[expression metrics](expert_level/artifacts_svm_geometry/metrics.json),
+[confusion matrix](expert_level/artifacts_svm_geometry/confusion_matrix.png),
+[failure cases](expert_level/artifacts_svm_geometry/failure_cases.png), and
+[pose benchmark](bonus_level/task2_results/summary.json).
 
 ## Technical Design
 
-### Face Pipeline
+- **Face:** Haar baseline or YuNet detection, OpenCV LBF 68-point landmarks,
+  preprocessing, ROI tracking, and temporal smoothing.
+- **Expression:** eye-centred geometric normalisation and a class-balanced
+  RBF-SVM selected by Macro-F1 and real-time latency.
+- **Pose:** primary-dancer tracking, torso-centred scale normalisation,
+  mirrored pose/motion similarity, and reaction-lag search.
 
-- Haar cascade for the required baseline, with YuNet available as an alternative detector.
-- OpenCV Facemark LBF for 68 facial landmarks.
-- CLAHE/gamma preprocessing, periodic full-frame re-detection, ROI tracking, and exponential smoothing.
-- Models are loaded once before the frame loop; each app releases the camera and closes windows on exit.
+## Interactive Demos
 
-### Expression Pipeline
+| Demo | Entry point |
+|---|---|
+| Facial landmarks | `.\run_beginner_level.ps1` |
+| Expression effects | `.\run_expert_level.ps1` |
+| Just Dance-style scoring | `.\run_bonus_level.ps1` |
+| Gesture-controlled platform game | `.\run_mario.ps1` |
 
-- Eye-centred translation, rotation, and scale normalisation.
-- Expression-focused distances, aspect ratios, angles, curvatures, and symmetry descriptors.
-- Class-balanced RBF-SVM selected with Macro-F1 as the primary metric.
-- Per-face landmark and probability smoothing for steadier real-time output.
-
-### Dance Scoring
-
-- Primary-dancer selection combines body size, centre proximity, confidence, and temporal continuity.
-- Torso-centred spatial normalisation reduces position and body-size bias.
-- Similarity combines pose geometry and motion:
-
-  `active_score = 0.55 × pose_similarity + 0.45 × motion_similarity`
-
-- A short temporal window searches for user reaction lag.
-- Mirrored left/right joints are evaluated when mirror matching is enabled.
-- `HOLD` / `MOVE!` hysteresis prevents static poses from earning repeated points.
+All demos run locally because webcam access and OpenCV/Tkinter windows are core
+to the project.
 
 ## Getting Started
 
-### Requirements
-
-- Python 3.11
-- Windows PowerShell for the provided root launchers
-- A laptop webcam for interactive demos
-- CPU execution is supported; CUDA is optional
-
-### Install
+**Requirements:** Python 3.11, Windows PowerShell, and a webcam for interactive
+demos. CPU execution is supported; CUDA is optional.
 
 ```powershell
 git clone https://github.com/yunli2024/NUS_SOC_Visual_Computing_Project_26Summer.git
@@ -219,165 +234,55 @@ conda activate vc_sws3026
 .\environment_setup\install_runtime.ps1
 ```
 
-Use `opencv-contrib-python`, not the standard `opencv-python` wheel, because LBF requires `cv2.face`.
-The installer deliberately installs Ultralytics with `--no-deps` after its
-runtime dependencies so that pip does not add a conflicting OpenCV wheel.
-Verify an existing environment without installing anything:
-
-```powershell
-.\environment_setup\install_runtime.ps1 -CheckOnly
-```
-
-If it reports `opencv-python` or `opencv-python-headless`, remove that
-conflicting wheel and reinstall `opencv-contrib-python` before running the
-demos.
-
-### Restore Course-Provided Assets
-
-Large course assets are intentionally excluded from Git. Place them at:
-
-```text
-resources/face_models/lbfmodel.yaml
-resources/expression_data/facial_expression_dataset.zip
-```
-
-- `lbfmodel.yaml` is required by the facial-landmark and expression webcam demos.
-- The FER-style archive is needed only to reproduce feature extraction and training; the final expression classifier is already versioned.
-- Haar, YuNet, YOLOv8n Pose, reference videos, and the final classifier are included.
-
-See [resources/README.md](resources/README.md) for the complete asset policy.
+Use `opencv-contrib-python`, not `opencv-python`, because LBF requires
+`cv2.face`. The course-provided `lbfmodel.yaml` must be restored to
+`resources/face_models/lbfmodel.yaml`; the FER archive is only needed to
+reproduce training. See [resources/README.md](resources/README.md).
 
 ## Run
 
-Run all commands from the repository root after activating `vc_sws3026`.
-
-### 1. Facial Landmarks
+Run from the repository root after activating `vc_sws3026`:
 
 ```powershell
 .\run_beginner_level.ps1
-.\run_beginner_level.ps1 --preprocess clahe
-```
-
-Press `Q` to quit. Runtime keys `1`-`4` switch preprocessing modes; `V` toggles enhanced display preprocessing.
-
-### 2. Expression Effects
-
-```powershell
 .\run_expert_level.ps1
-```
-
-Controls:
-
-- `E`: effects
-- `L`: landmarks
-- `S`: temporal smoothing
-- `C`: CLAHE
-- `Q` / `Esc`: quit
-
-Generate a camera-free effects preview:
-
-```powershell
-.\run_expert_level.ps1 --preview expert_level\artifacts\effects_preview.png
-```
-
-### 3. Just Dance-Style App
-
-```powershell
-.\run_bonus_level.ps1 --check
 .\run_bonus_level.ps1
-```
-
-If CPU inference is slow:
-
-```powershell
-.\run_bonus_level.ps1 --image-size 320
-```
-
-### 4. Gesture-Controlled Platform Game
-
-```powershell
-.\run_mario.ps1 --check
 .\run_mario.ps1
 ```
 
-Use `--camera 1` for a non-default webcam or `--image-size 256` to reduce CPU load.
-
-## Verification
-
-Camera-free checks:
-
-```powershell
-.\check_merge.ps1
-```
-
-This runs 47 unit tests, generates the expression-effects preview, and validates
-the Bonus and Mario model/data paths without opening a camera. If
-`lbfmodel.yaml` has not been restored, only the LBF-specific Beginner check is
-skipped with a warning.
-
-To run the Beginner check explicitly after restoring `lbfmodel.yaml`:
-
-```powershell
-python beginner_level\tests\check_part2_setup.py
-```
-
-Webcam and GUI behaviour must still be validated on the target laptop: confirm camera index, lighting, working distance, FPS, controls, and clean exit.
+Use `Q` or `Esc` to leave the OpenCV demos. For slower CPUs, reduce pose input
+with `.\run_bonus_level.ps1 --image-size 320`.
 
 ## Repository Structure
 
 ```text
-beginner_level/       Facial detection, LBF landmarks, preprocessing, and robustness checks
-expert_level/         Keypoint features, model training/evaluation, real-time effects, and evidence
-bonus_level/          Dance analysis, two-panel GUI, temporal pose scoring, and benchmark results
-bonus_level_mario/    Pose-controlled platform-game extension and tests
-resources/            Versioned detectors, pose model, videos, and local asset instructions
+beginner_level/       Face detection, LBF landmarks, and robustness work
+expert_level/         Keypoint features, expression model, effects, and evidence
+bonus_level/          Pose analysis, dual-panel dance app, scoring, and benchmark
+bonus_level_mario/    Pose-controlled platform-game extension
+resources/            Detectors, models, videos, and asset instructions
 environment_setup/    Conda and pip environment definitions
-docs/                 Course brief, reports, framework diagram, and presentation material
-poster/               Final editable poster, PDF, and README preview
+docs/                 Course brief, reports, diagrams, and showcase assets
+poster/               Final poster in PNG, PDF, and editable PPTX formats
 ```
-
-`bonus_level/mario_demo/` is a frozen historical snapshot retained for
-traceability. `bonus_level_mario/` is the only maintained Mario implementation
-and the target used by the root launcher and CI.
-
-## Known Limitations
-
-- Haar + LBF remains sensitive to large head rotation, heavy occlusion, motion blur, and extreme lighting.
-- Landmark geometry omits appearance cues such as wrinkles and skin texture, limiting recognition of subtle or ambiguous expressions.
-- The expression latency above measures classifier prediction, not the complete face-detection and landmark pipeline.
-- CPU-only pose throughput varies by device and can remain below the reference-video frame rate.
-- YOLOv8 Pose exposes body joints, not finger landmarks.
-- Live results depend on camera quality, background complexity, subject distance, and hardware.
 
 ## Documentation
 
-- [Project documentation index](docs/README.md)
-- [Beginner implementation guide](beginner_level/docs/README.md)
-- [Beginner robustness observations](beginner_level/docs/robustness_test.md)
-- [Expert Task 1 report](expert_level/TASK1_REPORT.md)
-- [Expert Task 2 report](expert_level/TASK2_REPORT.md)
-- [Bonus Task 1 report](bonus_level/TASK1_REPORT.md)
-- [Bonus Task 2 report](bonus_level/TASK2_REPORT.md)
-- [Mario extension guide](bonus_level_mario/README.md)
+[Documentation index](docs/README.md) |
+[Beginner guide](beginner_level/docs/README.md) |
+[Expression report](expert_level/TASK1_REPORT.md) |
+[Effects report](expert_level/TASK2_REPORT.md) |
+[Dance analysis](bonus_level/TASK1_REPORT.md) |
+[Dance scoring](bonus_level/TASK2_REPORT.md) |
+[Mario extension](bonus_level_mario/README.md)
 
-## Open-Source Licence
+## Licence and Team
 
-The project is distributed under the
-[GNU Affero General Public License v3.0](LICENSE). AGPL-3.0 was selected
-instead of MIT because the Bonus and Mario applications use Ultralytics YOLO
-software and pretrained weights that are released under AGPL-3.0.
+Released under the [GNU Affero General Public License v3.0](LICENSE). See
+[Third-Party Notices](THIRD_PARTY_NOTICES.md) for model, dataset, and dependency
+licences.
 
-Original Group 8 code and assets are copyright © 2026 Zhang Zonghao,
-Wang Xiaorui, Li Yunzang, and Zhang Yunxiang. OpenCV models, course materials,
-datasets, pretrained weights, and other third-party components retain their
-original licences and copyright; see
-[Third-Party Notices](THIRD_PARTY_NOTICES.md).
+**Group 8:** Zhang Zonghao, Wang Xiaorui, Li Yunzang, and Zhang Yunxiang.
 
-## Team
-
-- Zhang Zonghao
-- Wang Xiaorui
-- Li Yunzang
-- Zhang Yunxiang
-
-Developed for the NUS School of Computing Summer Workshop SWS3026 Visual Computing group project.
+Developed for the NUS School of Computing Summer Workshop SWS3026 Visual
+Computing group project.
