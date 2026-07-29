@@ -6,16 +6,29 @@
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/input-keypoints%20only-7B2CBF.svg" alt="Keypoint-only expression input">
 </p>
-
 <p align="center">
-  <strong>NUS School of Computing Summer Workshop 2026 | SWS3026 Visual Computing | Group 8</strong>
+  <strong>NUS SoC Summer Workshop 2026 | SWS3026 Visual Computing </strong>
 </p>
 
-An end-to-end visual-computing suite that turns webcam and video keypoints into
+<p>
+  <strong>Authors:</strong>
+  Yunzang Li<sup>1</sup>,
+  Yunxiang Zhang<sup>1</sup>,
+  Xiaorui Wang<sup>2</sup>,
+  and Zonghao Zhang<sup>3</sup>
+</p>
+
+<p>
+  <sup>1</sup>Southern University of Science and Technology (SUSTech), Shenzhen, China<br>
+  <sup>2</sup>Huazhong University of Science and Technology (HUST), Wuhan, China<br>
+  <sup>3</sup>Xi’an Jiaotong University (XJTU), Xi’an, China
+</p>
+
+An end2end visual computing suite that turns webcam and video keypoints into
 facial-expression effects, reaction-lag-aware dance scoring, and
 gesture-controlled gameplay.
 
-**Stack:** Python | OpenCV | NumPy | scikit-learn | Ultralytics YOLO |
+**Skill Stack:** Python | OpenCV | NumPy | scikit-learn | Ultralytics YOLO |
 Tkinter | Pillow
 
 **Quick links:** [Run the demos](#run) | [Measured results](#measured-results) |
@@ -64,9 +77,8 @@ discussed the real-time vision pipeline with the team.
   <em>Group 8 presenting the project poster and live gesture-controlled game.</em>
 </p>
 
-<details>
-  <summary><strong>View all 14 showcase photos</strong></summary>
-  <br>
+### Showcase Photo Gallery
+
   <p align="center">
     <img src="docs/readme/demo-day/demo-day-engagement.jpg" alt="Visitors trying gesture-controlled and pose-based demos during the NUS SOC showcase" width="100%">
   </p>
@@ -142,7 +154,6 @@ discussed the real-time vision pipeline with the team.
       </td>
     </tr>
   </table>
-</details>
 
 ## Project Highlights
 
@@ -273,13 +284,11 @@ poster/               Final poster in PNG, PDF, and editable PPTX formats
 [Dance scoring](bonus_level/TASK2_REPORT.md) |
 [Mario extension](bonus_level_mario/README.md)
 
-## Licence and Team
+## Licence
 
 Released under the [GNU Affero General Public License v3.0](LICENSE). See
 [Third-Party Notices](THIRD_PARTY_NOTICES.md) for model, dataset, and dependency
 licences.
-
-**Group 8:** Zhang Zonghao, Wang Xiaorui, Li Yunzang, and Zhang Yunxiang.
 
 Developed for the NUS School of Computing Summer Workshop SWS3026 Visual
 Computing group project.
