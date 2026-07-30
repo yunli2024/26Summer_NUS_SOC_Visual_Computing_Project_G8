@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 
 from dance_scoring import (
+    FixedRateScoreClock,
     HoldStateFilter,
     best_reference_match,
     mirror_pose,
@@ -26,6 +27,24 @@ def sample_pose() -> np.ndarray:
 
 
 class DanceScoringTests(unittest.TestCase):
+    def test_fixed_rate_clock_allows_one_event_per_window(self):
+        clock = FixedRateScoreClock(0.25)
+        self.assertTrue(clock.consume(0.00))
+        self.assertFalse(clock.consume(0.10))
+        self.assertFalse(clock.consume(0.249))
+        self.assertTrue(clock.consume(0.25))
+
+    def test_fixed_rate_clock_is_independent_of_extra_inference_frames(self):
+        slow = FixedRateScoreClock(0.25)
+        fast = FixedRateScoreClock(0.25)
+        slow_events = sum(slow.consume(value) for value in (0.0, 0.25, 0.50, 0.75))
+        fast_events = sum(fast.consume(value / 100.0) for value in range(76))
+        self.assertEqual(slow_events, fast_events)
+
+    def test_fixed_rate_clock_rejects_invalid_interval(self):
+        with self.assertRaises(ValueError):
+            FixedRateScoreClock(0.0)
+
     def setUp(self) -> None:
         self.pose = sample_pose()
         self.valid = np.ones(17, dtype=bool)

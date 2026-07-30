@@ -32,7 +32,8 @@ gesture-controlled gameplay.
 Tkinter | Pillow
 
 **Quick links:** [Run the demos](#run) | [Measured results](#measured-results) |
-[Project poster](#project-poster) | [Engineering case study](PORTFOLIO.md)
+[Project poster](#project-poster) | [Engineering case study](PORTFOLIO.md) |
+[Release notes](RELEASE_NOTES.md)
 
 ## Demo Gallery
 
@@ -163,7 +164,7 @@ discussed the real-time vision pipeline with the team.
   original face pixels.
 - Dance scoring handles body scale, mirrored motion, static poses, and short
   user reaction delays.
-- Persisted evaluation evidence, camera-free checks, and 47
+- Persisted evaluation evidence, camera-free checks, and 50
   platform-independent unit tests.
 
 ## System Overview
@@ -198,7 +199,7 @@ scoring, or gameplay feedback.
 | Pipeline | Key results |
 |---|---|
 | Keypoint-only expression recognition | **46.33% Macro-F1**, 47.31% accuracy, **18.08 ms** classifier latency on 7,178 test images |
-| Full-video pose benchmark | **91.16%** primary-dancer detection, **31.40 ms** pose inference, **23.09 FPS** over 2,680 frames |
+| Full-video pose benchmark | **91.16%** selected-pose availability, **31.40 ms** pose inference, **23.09 FPS** over 2,680 frames |
 
 Expression model selection used a stratified validation split; the official
 test split was reserved for final evaluation. Supporting evidence:
@@ -209,7 +210,7 @@ test split was reserved for final evaluation. Supporting evidence:
 
 ## Technical Design
 
-- **Face:** Haar baseline or YuNet detection, OpenCV LBF 68-point landmarks,
+- **Face:** Selectable Haar baseline or YuNet detection, OpenCV LBF 68-point landmarks,
   preprocessing, ROI tracking, and temporal smoothing.
 - **Expression:** eye-centred geometric normalisation and a class-balanced
   RBF-SVM selected by Macro-F1 and real-time latency.
@@ -253,6 +254,7 @@ Run from the repository root after activating `vc_sws3026`:
 
 ```powershell
 .\run_beginner_level.ps1
+.\run_beginner_level.ps1 --detector yunet
 .\run_expert_level.ps1
 .\run_bonus_level.ps1
 .\run_mario.ps1
@@ -260,6 +262,9 @@ Run from the repository root after activating `vc_sws3026`:
 
 Use `Q` or `Esc` to leave the OpenCV demos. If pose inference is slow, reduce
 the input size with `.\run_bonus_level.ps1 --image-size 320`.
+
+The dance game mutates score and combo at a fixed 4 Hz game-time rate, so
+faster inference does not create extra scoring opportunities.
 
 ## Repository Structure
 

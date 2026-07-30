@@ -82,6 +82,7 @@ def draw_status(
     message: str,
     preprocess_name: str = "",
     video_preprocess_name: str = "",
+    detector_name: str = "haar",
 ) -> None:
     face_size = "none" if selected_size is None else f"{selected_size[0]}x{selected_size[1]}"
     preprocess_text = preprocess_name or ("clahe" if clahe_enabled else "gray")
@@ -89,6 +90,7 @@ def draw_status(
         f"STATE: {status}",
         f"FPS: {fps:.1f}",
         f"Faces: {filtered_count}/{raw_count}",
+        f"Detector: {detector_name}",
         f"Box: {face_size}",
         f"Mode: {preprocess_text}  video: {video_preprocess_name}",
         f"Miss: {failed_frames}",

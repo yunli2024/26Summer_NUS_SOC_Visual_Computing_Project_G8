@@ -76,6 +76,10 @@ reaction delay, and can accept mirrored moves. Reference hold frames display
 `HOLD` without awarding points; standing still while the reference moves
 displays `MOVE!`.
 
+Score, combo, and average values update on fixed 250 ms game-time windows
+(4 Hz). Similarity can still refresh on every completed inference, but faster
+hardware cannot generate additional scoring events inside a window.
+
 To prevent `HOLD` from flashing during a slow but continuous reference action,
 reference activity is EMA-smoothed (`alpha=0.35`). `HOLD` requires two
 consecutive samples below `0.07` and remains active until the smoothed activity
@@ -85,9 +89,8 @@ The repository already includes the complete reference cache. To regenerate it
 from the versioned source video:
 
 ```powershell
-python pose_analyzer.py dance_example_1.mp4 `
-  --start-frame 300 --max-frames 300 --stride 3 `
-  --image-size 416 --contact-every 60 --output task2_results
+python pose_analyzer.py ..\resources\videos\dance_example_1.mp4 `
+  --image-size 320 --stride 1 --contact-every 450 --output task2_results
 ```
 
 Validate all Task 2 inputs without opening the camera:

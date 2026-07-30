@@ -19,8 +19,8 @@
   },
   "results": {
     "processed_frames": 2680,
-    "primary_dancer_frames": 2443,
-    "primary_dancer_rate": 0.9115671641791044,
+    "selected_pose_frames": 2443,
+    "selected_pose_availability_rate": 0.9115671641791044,
     "multi_person_frames": 5,
     "multi_person_rate": 0.0018656716417910447,
     "average_visible_keypoints": 16.698731068358576,

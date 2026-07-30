@@ -31,6 +31,7 @@ os.environ.setdefault("YOLO_CONFIG_DIR", str(YOLO_CONFIG_PATH))
 from ultralytics import YOLO  # noqa: E402
 
 from dance_scoring import (  # noqa: E402
+    FixedRateScoreClock,
     HoldStateFilter,
     MatchResult,
     best_reference_match,
@@ -198,6 +199,7 @@ class DanceGameApp:
             tuple[float, np.ndarray, np.ndarray]
         ] = deque(maxlen=32)
         self.hold_filter = HoldStateFilter()
+        self.score_clock = FixedRateScoreClock(args.score_interval)
         self.total_score = 0
         self.combo = 0
         self.best_combo = 0
@@ -355,6 +357,7 @@ class DanceGameApp:
         self.last_scored_generation = self.live_result.generation if self.live_result else -1
         self.pose_history.clear()
         self.hold_filter.reset()
+        self.score_clock.reset()
         self.total_score = self.combo = self.best_combo = 0
         self.score_sum = 0.0
         self.score_count = 0
@@ -373,6 +376,7 @@ class DanceGameApp:
             self.active_event.clear()
             self.pose_history.clear()
             self.hold_filter.reset()
+            self.score_clock.reset()
             self.pause_button.configure(text="Resume")
             self.status_var.set("Paused")
         else:
@@ -381,6 +385,7 @@ class DanceGameApp:
             self.active_event.set()
             self.pose_history.clear()
             self.hold_filter.reset()
+            self.score_clock.reset()
             self.pause_button.configure(text="Pause")
             self.status_var.set("Playing")
 
@@ -390,6 +395,7 @@ class DanceGameApp:
         self.active_event.clear()
         self.pose_history.clear()
         self.hold_filter.reset()
+        self.score_clock.reset()
         self.status_var.set("Stopped — press Start to restart")
         self.pause_button.configure(text="Pause")
 
@@ -494,7 +500,12 @@ class DanceGameApp:
             label, game_points, colour = "MOVE!", 0, (80, 80, 255)
         self.latest_feedback = label
         self.latest_colour = colour
-        if score_event:
+        game_elapsed = max(
+            0.0,
+            live.timestamp - self.start_time - self.paused_duration,
+        )
+        scoring_tick = self.score_clock.consume(game_elapsed)
+        if score_event and scoring_tick:
             self.total_score += game_points
             self.score_sum += match.score
             self.score_count += 1
@@ -516,7 +527,10 @@ class DanceGameApp:
         score = self.latest_match.score if self.latest_match else 0.0
         cv2.rectangle(frame, (0, 0), (frame.shape[1], 86), (15, 17, 28), -1)
         cv2.putText(frame, self.latest_feedback, (20, 42), cv2.FONT_HERSHEY_DUPLEX, 1.15, self.latest_colour, 2, cv2.LINE_AA)
-        detail = f"similarity {score:5.1f}   inference {live.inference_ms:.0f} ms"
+        detail = (
+            f"similarity {score:5.1f}   inference {live.inference_ms:.0f} ms"
+            f"   scoring {self.score_clock.rate_hz:.1f} Hz"
+        )
         if self.latest_match:
             lag_seconds = self.latest_match.lag_frames / self.reference_fps
             mirror_text = "  mirror" if self.latest_match.mirrored else ""
@@ -619,6 +633,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--smoothing", type=float, default=0.60)
     parser.add_argument("--max-lag", type=float, default=0.80, help="Allowed reaction delay in seconds")
     parser.add_argument(
+        "--score-interval",
+        type=float,
+        default=0.25,
+        help="Fixed seconds between score events; prevents FPS-dependent totals",
+    )
+    parser.add_argument(
         "--motion-window",
         type=float,
         default=0.40,
@@ -659,8 +679,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        if args.max_lag < 0.0 or args.motion_window <= 0.0:
-            raise ValueError("--max-lag must be non-negative and --motion-window must be positive.")
+        if args.max_lag < 0.0 or args.motion_window <= 0.0 or args.score_interval <= 0.0:
+            raise ValueError(
+                "--max-lag must be non-negative; --motion-window and "
+                "--score-interval must be positive."
+            )
         if args.prepare_stride < 1 or args.prepare_image_size < 160:
             raise ValueError("--prepare-stride must be at least 1 and --prepare-image-size at least 160.")
         prepare_reference_assets(args)

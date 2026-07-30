@@ -94,8 +94,11 @@ does not allow matching future movements.
 | Score below 55 | MISS | 0 | resets |
 
 `HOLD` frames do not award points, so a stable pose cannot repeatedly earn
-PERFECT. One potential score event is evaluated for each newly completed
-webcam inference rather than for each GUI refresh.
+PERFECT. Similarity and feedback are refreshed for each newly completed webcam
+inference. Score, combo, and average statistics mutate at a fixed 4 Hz
+game-time rate. Extra inference frames inside the same 250 ms window cannot
+create extra points, so totals are comparable across machines that sustain at
+least the scoring rate.
 
 The live overlay displays the final similarity, inference time, selected lag,
 mirror state, motion similarity, raw player/reference activity, and the
@@ -103,11 +106,12 @@ smoothed reference activity (`ref~`).
 
 ## Verification results
 
-The included reference output contains 300 annotated frames and 300 cached
-pose records at 10 FPS, giving a 30-second round. All 300 processed frames
-contained a primary dancer.
+The included full-video reference output contains 2,680 cached pose records at
+30 FPS, giving an approximately 89.3-second round. A scoreable person was
+selected in 2,443 frames (91.16% selected-pose availability). This is an
+availability measurement, not ground-truth primary-dancer identity accuracy.
 
-Ten deterministic scoring tests pass:
+Thirteen deterministic scoring tests pass:
 
 1. Identical poses score approximately 100.
 2. Translation and uniform scaling do not reduce the score.
@@ -120,6 +124,9 @@ Ten deterministic scoring tests pass:
 9. One isolated low-motion sample does not trigger `HOLD`.
 10. Confirmed `HOLD` remains active inside the hysteresis band and exits only
     above the release threshold.
+11. A fixed-rate clock permits at most one score event per time window.
+12. Extra inference frames do not increase the number of scoring opportunities.
+13. Invalid score intervals are rejected.
 
 The side-by-side tester also confirms that a correctly matched player delayed
 by 0.8 seconds retains a score of 100.00, including mirrored playback.

@@ -262,7 +262,7 @@ def analyze_video(model, input_path: Path, output_root: Path, args: argparse.Nam
     tracker = PrimaryDancerTracker(args.keypoint_confidence, args.smoothing_alpha)
     processed = 0
     decoded = args.start_frame
-    found_frames = 0
+    selected_pose_frames = 0
     multi_person_frames = 0
     visible_keypoints: list[int] = []
     pose_confidences: list[float] = []
@@ -302,7 +302,7 @@ def analyze_video(model, input_path: Path, output_root: Path, args: argparse.Nam
             chosen, points, valid, _ = tracker.select(detections, frame.shape)
             draw_other_people(frame, detections, chosen)
             if chosen is not None and points is not None and valid is not None:
-                found_frames += 1
+                selected_pose_frames += 1
                 visible = int(valid.sum())
                 visible_keypoints.append(visible)
                 if visible:
@@ -370,8 +370,10 @@ def analyze_video(model, input_path: Path, output_root: Path, args: argparse.Nam
         },
         "results": {
             "processed_frames": processed,
-            "primary_dancer_frames": found_frames,
-            "primary_dancer_rate": found_frames / processed if processed else 0.0,
+            "selected_pose_frames": selected_pose_frames,
+            "selected_pose_availability_rate": (
+                selected_pose_frames / processed if processed else 0.0
+            ),
             "multi_person_frames": multi_person_frames,
             "multi_person_rate": multi_person_frames / processed if processed else 0.0,
             "average_visible_keypoints": float(np.mean(visible_keypoints)) if visible_keypoints else 0.0,

@@ -7,6 +7,7 @@ BEGINNER_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = BEGINNER_DIR.parent
 
 HAAR_CASCADE_PATH = PROJECT_ROOT / "resources" / "face_models" / "haarcascade_frontalface_default.xml"
+YUNET_MODEL_PATH = PROJECT_ROOT / "resources" / "face_models" / "face_detection_yunet_2023mar.onnx"
 LBF_MODEL_PATH = PROJECT_ROOT / "resources" / "face_models" / "lbfmodel.yaml"
 
 CAMERA_INDEX = 0
@@ -84,6 +85,10 @@ MOUTH_FALSE_FACE_AREA_RATIO = 0.45
 MOUTH_FALSE_FACE_INSIDE_RATIO = 0.72
 MOUTH_FALSE_FACE_MIN_CENTER_Y = 0.42
 SINGLE_FACE_MODE = False
+FACE_DETECTOR_BACKEND = "haar"
+YUNET_SCORE_THRESHOLD = 0.80
+YUNET_NMS_THRESHOLD = 0.30
+YUNET_TOP_K = 100
 
 LBF_EXPAND_X = 0.03
 LBF_EXPAND_TOP = 0.04

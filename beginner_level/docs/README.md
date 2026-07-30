@@ -57,6 +57,17 @@ CLAHE preprocessing mode:
 .\run_beginner_level.ps1 --preprocess clahe
 ```
 
+YuNet alternative detector:
+
+```powershell
+.\run_beginner_level.ps1 --detector yunet
+```
+
+Haar remains the course baseline. YuNet uses the versioned OpenCV Zoo ONNX
+model and can be selected for the required alternative-detector comparison.
+The HUD identifies the active detector so matched robustness runs can be
+recorded without ambiguity.
+
 ## 6. Exit
 
 Press `q` in the OpenCV window to exit. The program releases the camera and closes the window.
@@ -75,7 +86,8 @@ Use `--clahe` to enable CLAHE preprocessing. This can help in uneven lighting, b
 
 ## 10. Robustness Testing
 
-Use `docs/robustness_test.md` to record results under different lighting, head poses, occlusions, distances, and multiple people.
+Use `docs/robustness_test.md` to record matched Haar and YuNet results under
+different lighting, head poses, occlusions, distances, and multiple people.
 
 ## 11. Output Locations
 

@@ -120,6 +120,30 @@ class HoldStateFilter:
         return self.active
 
 
+class FixedRateScoreClock:
+    """Allow at most one score mutation per fixed game-time window."""
+
+    def __init__(self, interval_seconds: float = 0.25) -> None:
+        if interval_seconds <= 0.0:
+            raise ValueError("Score interval must be positive.")
+        self.interval_seconds = float(interval_seconds)
+        self.reset()
+
+    @property
+    def rate_hz(self) -> float:
+        return 1.0 / self.interval_seconds
+
+    def reset(self) -> None:
+        self.last_window = -1
+
+    def consume(self, elapsed_seconds: float) -> bool:
+        window = int(max(0.0, float(elapsed_seconds)) / self.interval_seconds)
+        if window <= self.last_window:
+            return False
+        self.last_window = window
+        return True
+
+
 def _center(points: np.ndarray, valid: np.ndarray, indices: Iterable[int]) -> Optional[np.ndarray]:
     idx = np.asarray(list(indices), dtype=np.int32)
     idx = idx[valid[idx]]

@@ -38,21 +38,55 @@ def _iou(face_a, face_b) -> float:
 
 
 class ImprovedFaceDetector:
-    """Detect faces and keep the last face briefly during short failures."""
+    """Detect faces with Haar or YuNet and bridge short detection failures."""
 
-    def __init__(self, cascade_path: Path = config.HAAR_CASCADE_PATH) -> None:
+    def __init__(
+        self,
+        cascade_path: Path = config.HAAR_CASCADE_PATH,
+        *,
+        backend: str = config.FACE_DETECTOR_BACKEND,
+        yunet_path: Path = config.YUNET_MODEL_PATH,
+        yunet_score_threshold: float = config.YUNET_SCORE_THRESHOLD,
+    ) -> None:
+        if backend not in {"haar", "yunet"}:
+            raise ValueError(f"Unknown face detector backend: {backend}")
+        self.backend = backend
+        self.classifier = None
+        self.yunet = None
         self.cascade_path = Path(cascade_path)
-        if not self.cascade_path.exists():
-            raise FileNotFoundError(f"Haar cascade file not found: {self.cascade_path}")
-        self.classifier = cv2.CascadeClassifier(str(self.cascade_path))
-        if self.classifier.empty():
-            raise RuntimeError(f"Failed to load Haar cascade: {self.cascade_path}")
+        self.yunet_path = Path(yunet_path)
+        self.yunet_score_threshold = float(yunet_score_threshold)
+        if not 0.0 < self.yunet_score_threshold <= 1.0:
+            raise ValueError("YuNet score threshold must be in (0, 1].")
+
+        if backend == "haar":
+            if not self.cascade_path.exists():
+                raise FileNotFoundError(f"Haar cascade file not found: {self.cascade_path}")
+            self.classifier = cv2.CascadeClassifier(str(self.cascade_path))
+            if self.classifier.empty():
+                raise RuntimeError(f"Failed to load Haar cascade: {self.cascade_path}")
+        else:
+            if not self.yunet_path.exists():
+                raise FileNotFoundError(f"YuNet model file not found: {self.yunet_path}")
+            if not hasattr(cv2, "FaceDetectorYN"):
+                raise RuntimeError("This OpenCV build does not provide cv2.FaceDetectorYN.")
+            self.yunet = cv2.FaceDetectorYN.create(
+                str(self.yunet_path),
+                "",
+                (320, 320),
+                self.yunet_score_threshold,
+                config.YUNET_NMS_THRESHOLD,
+                config.YUNET_TOP_K,
+            )
         self.last_faces = np.empty((0, 4), dtype=np.int32)
         self.failed_frames = 0
         self.frame_index = 0
 
-    def detect(self, gray_frame) -> FaceDetectionResult:
+    def detect(self, gray_frame, bgr_frame=None) -> FaceDetectionResult:
         self.frame_index += 1
+        if self.backend == "yunet":
+            return self._detect_yunet(gray_frame, bgr_frame)
+
         force_full_frame = len(self.last_faces) == 0 or self.frame_index % config.FULL_DETECT_INTERVAL == 0
         faces = np.empty((0, 4), dtype=np.int32)
         raw_count = 0
@@ -97,6 +131,42 @@ class ImprovedFaceDetector:
                 )
             filtered_count = 0
 
+        return self._fallback(raw_count, filtered_count)
+
+    def _detect_yunet(self, gray_frame, bgr_frame=None) -> FaceDetectionResult:
+        if bgr_frame is None:
+            bgr_frame = cv2.cvtColor(gray_frame, cv2.COLOR_GRAY2BGR)
+        height, width = bgr_frame.shape[:2]
+        self.yunet.setInputSize((width, height))
+        _status, detections = self.yunet.detect(bgr_frame)
+        raw_count = 0 if detections is None else len(detections)
+        faces = (
+            np.empty((0, 4), dtype=np.int32)
+            if detections is None
+            else np.rint(detections[:, :4]).astype(np.int32)
+        )
+        faces = self._dedupe_faces(faces)
+        faces = self._filter_faces(faces, gray_frame.shape)
+        faces = self._reject_nested_mouth_faces(faces)
+        filtered_count = len(faces)
+        if filtered_count:
+            selected_faces = self._select_faces(faces)
+            if selected_faces:
+                faces = np.asarray(selected_faces, dtype=np.int32)
+                self.last_faces = faces
+                self.failed_frames = 0
+                selected = faces[0]
+                return FaceDetectionResult(
+                    faces=faces,
+                    raw_count=raw_count,
+                    filtered_count=filtered_count,
+                    status="DETECTED",
+                    detected_now=True,
+                    using_previous=False,
+                    failed_frames=0,
+                    selected_size=(int(selected[2]), int(selected[3])),
+                    message="Current-frame face detected with YuNet",
+                )
         return self._fallback(raw_count, filtered_count)
 
     def confirm_faces(self, faces) -> None:

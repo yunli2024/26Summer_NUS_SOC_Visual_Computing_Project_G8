@@ -79,8 +79,8 @@ package from being replaced by the incompatible standard OpenCV wheel.
 | Does keypoint-only expression recognition work? | 47.31% test accuracy, **46.33% Macro-F1**, 7,178-image held-out test split |
 | Is classifier inference within the course target? | **18.08 ms** per sample, below the 30 ms target |
 | Can body pose run on CPU? | **31.40 ms** mean YOLO inference at `imgsz=320` |
-| Was the full reference video evaluated? | 2,680 frames, **91.16%** primary-dancer detection, 23.09 FPS end-to-end offline |
-| Are interaction rules regression-tested? | **47 local and CI unit tests** covering geometry, scoring, gestures, and game mechanics |
+| Was the full reference video evaluated? | 2,680 frames, **91.16%** selected-pose availability, 23.09 FPS end-to-end offline |
+| Are interaction rules regression-tested? | **50 local and CI unit tests** covering geometry, scoring, fixed-rate score timing, gestures, and game mechanics |
 
 Primary artifacts:
 
@@ -129,12 +129,13 @@ Adapt ownership wording to match the work you personally completed:
   temporal dance scoring, and pose-controlled gameplay.
 - Designed scale-normalised, mirror-aware, reaction-lag-aware body-pose scoring
   and validated the pipeline across a 2,680-frame video, reaching 91.16%
-  primary-dancer detection and 31.40 ms mean pose inference on CPU.
+  selected-pose availability and 31.40 ms mean pose inference on CPU.
 - Evaluated a class-balanced keypoint-geometry SVM on 7,178 held-out images,
   achieving 46.33% Macro-F1 and 18.08 ms classifier latency without using face
   pixels as model input.
 - Hardened interactive CV demos with temporal filtering, gesture state
-  machines, portable assets, 47 deterministic tests, camera-free preflight
+  machines, fixed-rate scoring, portable assets, 50 deterministic tests,
+  camera-free preflight
   checks, and GitHub Actions CI.
 
 ## Honest Next Steps

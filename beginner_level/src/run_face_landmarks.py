@@ -35,6 +35,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--camera", type=int, default=config.CAMERA_INDEX, help="Camera index.")
     parser.add_argument(
+        "--detector",
+        choices=("haar", "yunet"),
+        default=config.FACE_DETECTOR_BACKEND,
+        help="Face detector backend. Haar remains the course baseline.",
+    )
+    parser.add_argument(
+        "--yunet-confidence",
+        type=float,
+        default=config.YUNET_SCORE_THRESHOLD,
+        help="Minimum YuNet face score in (0, 1].",
+    )
+    parser.add_argument(
         "--keep-mirror",
         action="store_true",
         help="Keep the camera's mirrored image instead of flipping it back.",
@@ -75,7 +87,10 @@ def main() -> int:
     apply_runtime_config(args)
 
     try:
-        face_detector = ImprovedFaceDetector()
+        face_detector = ImprovedFaceDetector(
+            backend=args.detector,
+            yunet_score_threshold=args.yunet_confidence,
+        )
         landmark_detector = SmoothedLandmarkDetector()
         cap = open_camera(args.camera)
     except (FileNotFoundError, RuntimeError) as exc:
@@ -99,7 +114,7 @@ def main() -> int:
 
             use_clahe = config.PREPROCESS_MODE in {"clahe", "clahe-gamma"}
             gray, preprocess_name = to_gray(detection_frame, use_clahe, mode=config.PREPROCESS_MODE)
-            detection = face_detector.detect(gray)
+            detection = face_detector.detect(gray, detection_frame)
             landmark_ok, landmarks, message = landmark_detector.fit(
                 gray,
                 detection.faces,
@@ -137,6 +152,7 @@ def main() -> int:
                 message=message,
                 preprocess_name=preprocess_name,
                 video_preprocess_name=video_preprocess_name,
+                detector_name=args.detector,
             )
             cv2.imshow(config.WINDOW_NAME, display_frame)
             if cv2.getWindowProperty(config.WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:

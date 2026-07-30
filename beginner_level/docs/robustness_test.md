@@ -5,14 +5,14 @@ Save result files in `beginner_level/outputs/robustness_results/`.
 
 For each case, test both:
 
-- Original grayscale
-- CLAHE preprocessing
-- Baseline version
-- Improved version
+- Haar with raw grayscale
+- Haar with CLAHE preprocessing
+- YuNet with the same camera placement
+- The same duration and scene conditions for each run
 
 ## Test Table
 
-| Case | Baseline success rate | Improved success rate | DETECTED/CACHED/LOST notes | Landmarks stable? | Jitter/drift? | Baseline avg FPS | Improved avg FPS | Original grayscale result | CLAHE result | False positive notes | Observation |
+| Case | Haar success rate | YuNet success rate | DETECTED/CACHED/LOST notes | Landmarks stable? | Jitter/drift? | Haar avg FPS | YuNet avg FPS | Raw result | CLAHE result | False positive notes | Observation |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Normal lighting |  |  |  |  |  |  |  |  |  |  |  |
 | Dark lighting |  |  |  |  |  |  |  |  |  |  |  |
@@ -35,10 +35,10 @@ For each case, test both:
 
 For each case:
 
-1. Run baseline for about 20 seconds.
-2. Record approximate detection success rate and average FPS.
-3. Run improved without CLAHE for about 20 seconds.
-4. Run improved with CLAHE for about 20 seconds.
+1. Run Haar for about 20 seconds with `--detector haar`.
+2. Record detection success rate and average FPS.
+3. Repeat the same scene with `--detector yunet`.
+4. For the lighting comparison, repeat Haar with `--preprocess clahe`.
 5. Record whether the screen says `DETECTED`, `CACHED`, or `LOST`.
 6. If a small nose/mouth box appears, record whether it is green `DETECTED` or yellow `CACHED`.
 7. Compare landmark jitter and drift.

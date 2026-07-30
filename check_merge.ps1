@@ -47,7 +47,7 @@ try {
         Write-Warning "Skipped LBF runtime check; restore resources\face_models\lbfmodel.yaml first."
     }
 
-    Write-Host "Project verification passed: 47 unit tests plus camera-free demo preflights."
+    Write-Host "Project verification passed: 50 unit tests plus camera-free demo preflights."
 }
 finally {
     Pop-Location

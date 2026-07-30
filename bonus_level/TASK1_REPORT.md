@@ -40,14 +40,17 @@ Continuity combines box IoU and normalized center displacement. This prevents id
 | Metric | Single-dancer example | Multi-person TikTok sample |
 |---|---:|---:|
 | Analyzed frames | 60 | 60 |
-| Primary dancer detected | 100% | 100% |
+| Selected-pose availability | 100% | 100% |
 | Frames with multiple people | 1.67% | 85.00% |
 | Average visible joints | 16.95 / 17 | 13.77 / 17 |
 | Average visible-joint confidence | 0.935 | 0.874 |
-| Average YOLO inference time | 492.03 ms | 293.74 ms |
+| Average YOLO inference time | 170.55 ms | 293.74 ms |
 | End-to-end processing speed | 1.72 FPS | 2.15 FPS |
 
-These numbers describe only the selected segments and must not be presented as full-dataset accuracy.
+These numbers describe only the selected segments and must not be presented as
+full-dataset accuracy. “Selected-pose availability” means that the heuristic
+tracker returned a scoreable person; it does not prove that the selected
+identity was the intended dancer.
 
 ## Challenges, strategies, and findings
 

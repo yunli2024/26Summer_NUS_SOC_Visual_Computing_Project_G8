@@ -57,6 +57,7 @@ def main() -> int:
     results.append(check("cv2 import", True, cv2.__version__))
     results.append(check("cv2.face exists", hasattr(cv2, "face")))
     results.append(check("Haar file exists", config.HAAR_CASCADE_PATH.exists(), str(config.HAAR_CASCADE_PATH)))
+    results.append(check("YuNet file exists", config.YUNET_MODEL_PATH.exists(), str(config.YUNET_MODEL_PATH)))
     results.append(check("LBF file exists", config.LBF_MODEL_PATH.exists(), str(config.LBF_MODEL_PATH)))
 
     try:
@@ -85,6 +86,16 @@ def main() -> int:
         results.append(check("Rejected detection clears cache", len(detector.last_faces) == 0))
     except Exception as exc:
         results.append(check("Improved Haar detector loads", False, str(exc)))
+
+    try:
+        detector = ImprovedFaceDetector(backend="yunet")
+        result = detector.detect(
+            np.zeros((120, 120), dtype=np.uint8),
+            np.zeros((120, 120, 3), dtype=np.uint8),
+        )
+        results.append(check("YuNet detector loads", result.status in {"DETECTED", "CACHED", "LOST"}))
+    except Exception as exc:
+        results.append(check("YuNet detector loads", False, str(exc)))
 
     try:
         landmark_detector = SmoothedLandmarkDetector()
