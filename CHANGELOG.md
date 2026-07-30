@@ -3,6 +3,24 @@
 All notable portfolio releases are recorded here. The project follows
 Semantic Versioning for recruiter-facing snapshots.
 
+## [1.1.0-rc.2] - 2026-07-30
+
+### Added
+
+- Expert webcam stage telemetry with mean, p50, and p95 latency plus
+  reproducibility metadata.
+- Profile-aware integrity checks for tracked, demo, and training assets.
+- Four unit tests for primary-dancer selection, continuity, smoothing, and
+  reset behaviour.
+- Optional Ultralytics `--device` selection in the dance and Mario live apps.
+- `-Locked` runtime installation from the verified dependency snapshot.
+
+### Changed
+
+- Reframed softmax-normalized SVM margins as relative class scores rather than
+  calibrated confidence probabilities.
+- Expanded the portable local/CI regression suite from 50 to 54 tests.
+
 ## [1.1.0-rc.1] - 2026-07-30
 
 ### Added

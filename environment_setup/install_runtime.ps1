@@ -1,5 +1,6 @@
 param(
-    [switch]$CheckOnly
+    [switch]$CheckOnly,
+    [switch]$Locked
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,17 +11,21 @@ if (-not $pythonCommand) {
 }
 
 $pythonExe = $pythonCommand.Source
-$requirements = Join-Path $PSScriptRoot "requirements.txt"
+$requirementsName = if ($Locked) { "requirements-lock.txt" } else { "requirements.txt" }
+$requirements = Join-Path $PSScriptRoot $requirementsName
 
 if (-not $CheckOnly) {
+    Write-Host "Installing from $requirementsName"
     & $pythonExe -m pip install -r $requirements
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     # Ultralytics declares opencv-python as a hard dependency even though this
     # project needs the contrib wheel. Install it without dependency resolution
     # after all runtime dependencies are present.
-    & $pythonExe -m pip install "ultralytics>=8.3" --no-deps
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    if (-not $Locked) {
+        & $pythonExe -m pip install "ultralytics>=8.3" --no-deps
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
 }
 
 & $pythonExe (Join-Path $PSScriptRoot "check_runtime.py")

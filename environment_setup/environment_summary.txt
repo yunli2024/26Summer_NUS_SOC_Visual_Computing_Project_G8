@@ -10,6 +10,9 @@ Installation:
 2. conda activate vc_sws3026
 3. .\environment_setup\install_runtime.ps1
 
+For the exact dependency snapshot used by the latest verified release:
+.\environment_setup\install_runtime.ps1 -Locked
+
 Required runtime invariant:
 - opencv-contrib-python is installed.
 - opencv-python and opencv-python-headless are not installed.
@@ -19,6 +22,7 @@ Required runtime invariant:
 
 Verification:
 .\environment_setup\install_runtime.ps1 -CheckOnly
+python .\environment_setup\check_assets.py --profile demo
 .\check_merge.ps1
 
 The versioned requirements-lock.txt records one tested dependency snapshot.

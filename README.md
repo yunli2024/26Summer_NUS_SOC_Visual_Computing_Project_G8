@@ -243,6 +243,11 @@ conda activate vc_sws3026
 .\environment_setup\install_runtime.ps1
 ```
 
+Use `.\environment_setup\install_runtime.ps1 -Locked` when reproducing the
+exact dependency snapshot from the latest verified release. Before a live demo,
+verify all local and tracked assets with
+`python .\environment_setup\check_assets.py --profile demo`.
+
 Use `opencv-contrib-python`, not `opencv-python`, because LBF requires
 `cv2.face`. The course-provided `lbfmodel.yaml` must be restored to
 `resources/face_models/lbfmodel.yaml`; the FER archive is only needed to

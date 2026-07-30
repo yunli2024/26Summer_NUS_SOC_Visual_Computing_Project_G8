@@ -132,6 +132,8 @@ def prepare_reference_assets(args: argparse.Namespace) -> bool:
         str(args.prepare_stride),
         "--contact-every",
         "120",
+        "--device",
+        str(args.device),
     ]
     completed = subprocess.run(command, cwd=str(BASE_DIR), check=False)
     if completed.returncode != 0:
@@ -317,7 +319,7 @@ class DanceGameApp:
                 started = time.perf_counter()
                 predictions = self.model.predict(
                     frame, conf=self.args.confidence, imgsz=self.args.image_size,
-                    device="cpu", verbose=False,
+                    device=self.args.device, verbose=False,
                 )
                 inference_ms = (time.perf_counter() - started) * 1000.0
                 detections = extract_detections(predictions[0]) if predictions else []
@@ -605,7 +607,8 @@ def validate_inputs(args: argparse.Namespace) -> int:
         raise RuntimeError("Cached reference rendering changed the source-frame shape.")
     model = YOLO(str(args.model))
     prediction = model.predict(
-        sample_frame, conf=args.confidence, imgsz=args.image_size, device="cpu", verbose=False,
+        sample_frame, conf=args.confidence, imgsz=args.image_size,
+        device=args.device, verbose=False,
     )[0]
     detected_people = len(extract_detections(prediction))
     print("Bonus Task 2 validation passed")
@@ -624,6 +627,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE, help="Reference MP4")
     parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE, help="pose_cache.npz from Task 1")
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL, help="YOLO pose model")
+    parser.add_argument("--device", default="cpu", help="Ultralytics device: cpu, 0, 1, ...")
     parser.add_argument("--camera", type=int, default=0)
     parser.add_argument("--width", type=int, default=960)
     parser.add_argument("--height", type=int, default=540)

@@ -29,11 +29,17 @@ jobs:
           python -m compileall -q
           beginner_level expert_level bonus_level bonus_level_mario
 
+      - name: Validate tracked demo assets
+        run: python environment_setup/check_assets.py --profile tracked
+
       - name: Test expression feature geometry
         run: python expert_level/test_expression_features.py
 
       - name: Test dance scoring
         run: python bonus_level/test_dance_scoring.py
+
+      - name: Test primary-dancer tracking
+        run: python bonus_level/test_pose_tracker.py
 
       - name: Test Mario gesture recognition and game mechanics
         run: python -m unittest discover -s bonus_level_mario -p "test_*.py"

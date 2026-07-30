@@ -98,6 +98,7 @@ Validate all Task 2 inputs without opening the camera:
 ```powershell
 python just_dance_app.py --check
 python -m unittest -v test_dance_scoring.py
+python -m unittest -v test_pose_tracker.py
 ```
 
 Start the game:
@@ -107,6 +108,8 @@ python danceapp.py
 ```
 
 `python just_dance_app.py` is equivalent; `danceapp.py` is retained as the course-starter-compatible entry point.
+CPU is the default inference device; use `python danceapp.py --device 0` only
+when a compatible CUDA GPU is available.
 
 Controls:
 

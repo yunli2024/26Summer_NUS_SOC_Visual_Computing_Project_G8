@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
+import platform
 import sys
 import time
+from collections import defaultdict, deque
+from datetime import datetime, timezone
 from pathlib import Path
 
 import cv2
@@ -38,7 +42,7 @@ EXPRESSION_COLORS = {
 
 
 class FaceProbabilitySmoother:
-    """EMA-smooth class probabilities after matching faces by center position."""
+    """EMA-smooth relative class scores after matching faces by center position."""
 
     def __init__(self, alpha: float = 0.35) -> None:
         if not 0.0 < alpha <= 1.0:
@@ -222,12 +226,12 @@ def draw_prediction(
     frame: np.ndarray,
     face: np.ndarray,
     expression: str,
-    confidence: float,
+    relative_score: float,
 ) -> None:
     x, y, width, height = map(int, face)
     color = EXPRESSION_COLORS.get(expression, (255, 255, 255))
     cv2.rectangle(frame, (x, y), (x + width, y + height), color, 2, cv2.LINE_AA)
-    text = f"{expression.upper()}  {confidence * 100:.0f}%"
+    text = f"{expression.upper()}  score {relative_score:.2f}"
     (text_width, text_height), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, 0.58, 1)
     label_y = max(text_height + baseline + 4, y)
     cv2.rectangle(
@@ -255,13 +259,79 @@ def load_model(model_path: Path):
     return classifier
 
 
-def predict_probabilities(classifier, features: np.ndarray) -> np.ndarray:
+def predict_class_scores(classifier, features: np.ndarray) -> np.ndarray:
+    """Return normalized class scores, which are not calibration guarantees.
+
+    Estimators with ``predict_proba`` return their native probabilities.
+    Otherwise, a softmax over decision margins is used only to obtain stable
+    relative scores for temporal smoothing and display.
+    """
     if hasattr(classifier, "predict_proba"):
         return np.asarray(classifier.predict_proba(features), dtype=np.float32)
     scores = np.asarray(classifier.decision_function(features), dtype=np.float32)
     scores -= scores.max(axis=1, keepdims=True)
     exponentials = np.exp(scores)
     return exponentials / exponentials.sum(axis=1, keepdims=True)
+
+
+class LatencyTelemetry:
+    """Collect lightweight stage timings for an auditable webcam benchmark."""
+
+    def __init__(self, window: int = 90) -> None:
+        self.samples: dict[str, list[float]] = defaultdict(list)
+        self.recent: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=window))
+
+    def add(self, stage: str, milliseconds: float) -> None:
+        value = max(0.0, float(milliseconds))
+        self.samples[stage].append(value)
+        self.recent[stage].append(value)
+
+    def rolling_mean(self, stage: str) -> float:
+        values = self.recent.get(stage)
+        return float(np.mean(values)) if values else 0.0
+
+    @staticmethod
+    def _summary(values: list[float]) -> dict[str, float | int]:
+        array = np.asarray(values, dtype=np.float64)
+        if array.size == 0:
+            return {"count": 0, "mean_ms": 0.0, "p50_ms": 0.0, "p95_ms": 0.0}
+        return {
+            "count": int(array.size),
+            "mean_ms": round(float(np.mean(array)), 3),
+            "p50_ms": round(float(np.percentile(array, 50)), 3),
+            "p95_ms": round(float(np.percentile(array, 95)), 3),
+        }
+
+    def write(self, output_path: Path, args: argparse.Namespace) -> None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        report = {
+            "schema_version": 1,
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "scope": (
+                "pipeline_ms covers face detection + LBF landmarks, feature "
+                "construction, classifier scoring, and temporal smoothing. "
+                "It excludes camera capture, visual effects, drawing, and display."
+            ),
+            "stages": {
+                stage: self._summary(values)
+                for stage, values in sorted(self.samples.items())
+            },
+            "settings": {
+                "camera": args.camera,
+                "resolution": [args.width, args.height],
+                "clahe": not args.clahe_off,
+                "smoothing": not args.smoothing_off,
+                "model": str(args.expression_model),
+            },
+            "environment": {
+                "platform": platform.platform(),
+                "processor": platform.processor() or "unknown",
+                "python": platform.python_version(),
+                "opencv": cv2.__version__,
+                "numpy": np.__version__,
+            },
+        }
+        output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
 
 def run(args: argparse.Namespace) -> None:
@@ -283,6 +353,7 @@ def run(args: argparse.Namespace) -> None:
     previous_time = time.perf_counter()
     smoothed_fps = 0.0
     inference_ms = 0.0
+    telemetry = LatencyTelemetry()
 
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(WINDOW_NAME, args.width, args.height)
@@ -295,11 +366,18 @@ def run(args: argparse.Namespace) -> None:
             if not args.no_mirror:
                 frame = cv2.flip(frame, 1)
 
+            pipeline_started = time.perf_counter()
+            detector_started = time.perf_counter()
             faces, raw_landmarks = detector.detect(frame, use_clahe=clahe_enabled)
             smoothed_landmarks = landmark_smoother.update(
                 faces, raw_landmarks, enabled=smoothing_enabled
             )
+            telemetry.add(
+                "face_detection_and_landmarks_ms",
+                (time.perf_counter() - detector_started) * 1000.0,
+            )
 
+            feature_started = time.perf_counter()
             valid_faces: list[np.ndarray] = []
             valid_landmarks: list[np.ndarray] = []
             feature_rows: list[np.ndarray] = []
@@ -310,12 +388,17 @@ def run(args: argparse.Namespace) -> None:
                     valid_landmarks.append(points)
                 except ValueError:
                     continue
+            telemetry.add(
+                "feature_construction_ms",
+                (time.perf_counter() - feature_started) * 1000.0,
+            )
 
             if feature_rows:
                 feature_matrix = np.stack(feature_rows).astype(np.float32)
                 inference_started = time.perf_counter()
-                probabilities = predict_probabilities(classifier, feature_matrix)
+                probabilities = predict_class_scores(classifier, feature_matrix)
                 inference_ms = (time.perf_counter() - inference_started) * 1000.0 / len(feature_rows)
+                telemetry.add("classifier_per_face_ms", inference_ms)
                 face_array = np.stack(valid_faces).astype(np.int32)
                 probabilities = probability_smoother.update(
                     face_array, probabilities, enabled=smoothing_enabled
@@ -325,15 +408,20 @@ def run(args: argparse.Namespace) -> None:
                 probabilities = np.empty((0, len(classes)), dtype=np.float32)
                 probability_smoother.reset()
 
+            telemetry.add(
+                "pipeline_ms",
+                (time.perf_counter() - pipeline_started) * 1000.0,
+            )
+
             for face, points, probability in zip(face_array, valid_landmarks, probabilities):
                 best_index = int(np.argmax(probability))
                 expression = str(classes[best_index])
-                confidence = float(probability[best_index])
+                relative_score = float(probability[best_index])
                 if effects_enabled:
                     apply_expression_effect(frame, face, expression, frame_index)
                 if landmarks_enabled:
                     draw_landmarks(frame, points)
-                draw_prediction(frame, face, expression, confidence)
+                draw_prediction(frame, face, expression, relative_score)
 
             current_time = time.perf_counter()
             instant_fps = 1.0 / max(current_time - previous_time, 1e-6)
@@ -345,7 +433,8 @@ def run(args: argparse.Namespace) -> None:
             cv2.addWeighted(overlay, 0.65, frame, 0.35, 0, frame)
             cv2.putText(
                 frame,
-                f"FPS {smoothed_fps:.1f} | classifier {inference_ms:.1f} ms | faces {len(face_array)}",
+                f"FPS {smoothed_fps:.1f} | pipeline {telemetry.rolling_mean('pipeline_ms'):.1f} ms "
+                f"| classifier {inference_ms:.1f} ms | faces {len(face_array)}",
                 (12, 25),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.58,
@@ -386,6 +475,9 @@ def run(args: argparse.Namespace) -> None:
     finally:
         capture.release()
         cv2.destroyAllWindows()
+        if args.benchmark_output:
+            telemetry.write(args.benchmark_output, args)
+            print(f"Latency benchmark written to: {args.benchmark_output}")
 
 
 def create_effect_preview(output_path: Path) -> None:
@@ -421,6 +513,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--clahe-off", action="store_true")
     parser.add_argument("--landmark-alpha", type=float, default=0.6)
     parser.add_argument("--probability-alpha", type=float, default=0.35)
+    parser.add_argument(
+        "--benchmark-output",
+        type=Path,
+        help="write stage latency mean/p50/p95 and environment metadata as JSON on exit",
+    )
     parser.add_argument("--preview", type=Path, help="render an effect preview and exit")
     return parser.parse_args()
 

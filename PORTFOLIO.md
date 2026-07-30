@@ -80,7 +80,7 @@ package from being replaced by the incompatible standard OpenCV wheel.
 | Is classifier inference within the course target? | **18.08 ms** per sample, below the 30 ms target |
 | Can body pose run on CPU? | **31.40 ms** mean YOLO inference at `imgsz=320` |
 | Was the full reference video evaluated? | 2,680 frames, **91.16%** selected-pose availability, 23.09 FPS end-to-end offline |
-| Are interaction rules regression-tested? | **50 local and CI unit tests** covering geometry, scoring, fixed-rate score timing, gestures, and game mechanics |
+| Are interaction rules regression-tested? | **54 local and CI unit tests** covering geometry, primary-dancer continuity, scoring, fixed-rate score timing, gestures, and game mechanics |
 
 Primary artifacts:
 
@@ -102,7 +102,7 @@ offline benchmark and does not guarantee the same FPS on every laptop.
 - Versioned compact reference-pose cache
 - Deterministic tests for geometry, lag alignment, gesture transitions, and
   platform-game mechanics
-- CI on Python 3.11 for all 47 portable core-logic tests
+- CI on Python 3.11 for all 54 portable core-logic tests
 - Original course constraints, detailed reports, metrics, plots, and failure
   cases retained beside the implementation
 
@@ -134,13 +134,15 @@ Adapt ownership wording to match the work you personally completed:
   achieving 46.33% Macro-F1 and 18.08 ms classifier latency without using face
   pixels as model input.
 - Hardened interactive CV demos with temporal filtering, gesture state
-  machines, fixed-rate scoring, portable assets, 50 deterministic tests,
+machines, fixed-rate scoring, portable assets, 54 deterministic tests,
   camera-free preflight
   checks, and GitHub Actions CI.
 
 ## Honest Next Steps
 
-- Measure end-to-end webcam latency separately from classifier-only latency.
+- Run the implemented `--benchmark-output` webcam telemetry on the target
+  laptop and publish its end-to-end p50/p95 result separately from the existing
+  classifier-only latency.
 - Calibrate gesture thresholds from multiple players and camera placements
   instead of a single setup.
 - Add a recorded side-by-side user study comparing dance feedback with and

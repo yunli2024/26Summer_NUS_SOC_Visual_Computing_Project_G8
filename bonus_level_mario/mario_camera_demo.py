@@ -535,7 +535,7 @@ class CameraPlatformDemo:
                 started = time.perf_counter()
                 result = model.predict(
                     frame, conf=self.args.confidence, imgsz=self.args.image_size,
-                    device="cpu", verbose=False,
+                    device=self.args.device, verbose=False,
                 )[0]
                 inference_ms = (time.perf_counter() - started) * 1000.0
                 detections = extract_detections(result)
@@ -1195,7 +1195,10 @@ def validate_demo(args: argparse.Namespace) -> int:
     if not ok:
         raise RuntimeError("Could not decode validation frame.")
     model = YOLO(str(args.model))
-    result = model.predict(frame, conf=args.confidence, imgsz=args.image_size, device="cpu", verbose=False)[0]
+    result = model.predict(
+        frame, conf=args.confidence, imgsz=args.image_size,
+        device=args.device, verbose=False,
+    )[0]
     detections = extract_detections(result)
     tracker = PrimaryDancerTracker(keypoint_threshold=args.keypoint_confidence)
     _, points, valid, _ = tracker.select(detections, frame.shape)
@@ -1215,6 +1218,7 @@ def validate_demo(args: argparse.Namespace) -> int:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Camera-controlled Mario-style platform game demo")
     parser.add_argument("--model", type=Path, default=MODEL_PATH)
+    parser.add_argument("--device", default="cpu", help="Ultralytics device: cpu, 0, 1, ...")
     parser.add_argument("--camera", type=int, default=0)
     parser.add_argument("--camera-width", type=int, default=960)
     parser.add_argument("--camera-height", type=int, default=540)

@@ -105,7 +105,7 @@ classifier is the tuned non-PCA geometry-augmented RBF-SVM:
 python task2_realtime.py
 ```
 
-The application detects faces with Haar, fits the same 68-point LBF model, applies the Task 1 normalization, predicts expressions, and smooths both landmarks and class probabilities over time.
+The application detects faces with Haar, fits the same 68-point LBF model, applies the Task 1 normalization, predicts expressions, and smooths both landmarks and relative class scores over time.
 
 Controls:
 
@@ -115,7 +115,7 @@ Controls:
 - `C`: toggle CLAHE face-detection preprocessing.
 - `Q` or `Esc`: quit.
 
-Seven built-in effects require no external image assets: happy sparkles, a surprise star, angry red action lines, sad rain, fear echo boxes, disgust bubbles/green tint, and neutral corner markers. The predicted expression, confidence, FPS, and classifier-only inference time are displayed live.
+Seven built-in effects require no external image assets: happy sparkles, a surprise star, angry red action lines, sad rain, fear echo boxes, disgust bubbles/green tint, and neutral corner markers. The predicted expression, relative score, FPS, rolling pipeline latency, and classifier-only inference time are displayed live. Add `--benchmark-output artifacts/webcam_latency.json` to persist mean/p50/p95 stage timings and environment metadata when the application exits.
 
 If another camera index is needed:
 
